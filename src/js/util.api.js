@@ -1,6 +1,7 @@
 
 var TIMEOUT_FAILOVER_API = 4000; // 4 seconds (in ms)
 var TIMEOUT_MULTI_API = 8000; // 8 seconds (in ms)
+var TIMEOUT_OTHER = 7000; // 7 seconds (in ms)
 
 //Inlude a .url param in every jqXHR object -- http://stackoverflow.com/a/11980396
 $.ajaxSetup({
@@ -141,12 +142,12 @@ function _encodeForJSONRPCOverGET(params) {
   return encodeURIComponent(bytesToBase64(stringToBytes(JSON.stringify(params))));
 }
 
-function makeJSONRPCCall(method, params, endpoints, onSuccess, onError) {
+function makeJSONRPCCall(endpoints, method, params, timeout, onSuccess, onError) {
   var extraAJAXOpts = {
     'contentType': 'application/json; charset=utf-8',
-    'dataType': 'json',
-    'timeout': timeout
+    'dataType': 'json'
   }
+  if(timeout) extraAJAXOpts['timeout'] = timeout;
   
   return fetchData(endpoints,
      onSuccess, onError,
@@ -178,10 +179,10 @@ function _makeJSONAPICall(destType, endpoints, method, params, timeout, onSucces
   
   //make JSON API call to counterblockd
   if(destType == "counterblockd") {
-    makeJSONRPCCall(method, params, endpoints, onSuccess, onError);
+    makeJSONRPCCall(endpoints, method, params, timeout, onSuccess, onError);
   } else if(destType == "counterpartyd") {
     //make JSON API call to counterblockd, which will proxy it to counterpartyd
-    makeJSONRPCCall("proxy_to_counterpartyd", {"method": method, "params": params }, endpoints, onSuccess, onError);
+    makeJSONRPCCall(endpoints, "proxy_to_counterpartyd", {"method": method, "params": params }, timeout, onSuccess, onError);
   }
 }
 

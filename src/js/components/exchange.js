@@ -153,8 +153,9 @@ function ExchangeViewModel() {
     for(var i = 0; i < addresses.length; i++) {
       address = addresses[i][0];
       addressObj = WALLET.getAddressObj(address);
-      bal = WALLET.getBalance(address, self.baseAsset());
       if(addressObj.IS_WATCH_ONLY) continue; //don't list watch addresses, obviously
+      if(addressObj.IS_ARMORY_OFFLINE && self.baseAsset() === 'BTC') continue; //don't list armory addresses where we're selling BTC
+      bal = WALLET.getBalance(address, self.baseAsset());
       if(bal) {
         addressesWithBalance.push(new BuySellAddressInDropdownItemModel(addresses[i][0], addresses[i][1], self.baseAsset(), bal));  
         self.balances[addresses[i][0] + '_' + self.baseAsset()] = parseFloat(bal);     
@@ -282,9 +283,13 @@ function ExchangeViewModel() {
     var onSuccess = function(txHash, data, endpoint, addressType, armoryUTx) {
       trackEvent('Exchange', 'Sell', self.dispAssetPair());
       
-      var message = "Your order to sell <b class='notoQuantityColor'>" + self.sellAmount() + "</b>"
-       + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> " + (armoryUTx ? "will be placed" : "has been placed") + ". "; 
-      WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
+      if(params['give_asset'] === 'BTC') {
+        doOrderAutoBTCEscrow(txHash, params, 'sell');  
+      } else {
+        var message = "Your order to sell <b class='notoQuantityColor'>" + self.sellAmount() + "</b>"
+         + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> " + (armoryUTx ? "will be placed" : "has been placed") + ". "; 
+        WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
+      }
     }
 
     WALLET.doTransaction(self.selectedAddressForSell(), "create_order", params, onSuccess);
@@ -373,6 +378,7 @@ function ExchangeViewModel() {
       addressObj = WALLET.getAddressObj(address);
       bal = WALLET.getBalance(address, self.quoteAsset());
       if(addressObj.IS_WATCH_ONLY) continue; //don't list watch addresses, obviously
+      if(addressObj.IS_ARMORY_OFFLINE && self.quoteAsset() === 'BTC') continue; //don't list armory addresses where we're selling BTC
       if(bal) {
         addressesWithBalance.push(new BuySellAddressInDropdownItemModel(addresses[i][0], addresses[i][1], self.quoteAsset(), bal));  
         self.balances[addresses[i][0] + '_' + self.quoteAsset()] = parseFloat(bal);     
@@ -465,6 +471,58 @@ function ExchangeViewModel() {
     } 
   }
 
+  self.doOrderAutoBTCEscrow = function(orderTxHash, orderParams, orderAction) {
+    assert(orderParams['give_asset'] === 'BTC');
+    assert(orderAction === 'buy' || orderAction === 'sell');
+
+    if(!AUTOBTCESCROW_SERVER || PREFERENCES['btcpay_method'] !== 'autoescrow')
+      return;
+      
+    //step 1: fetch an escrow address to send the BTC to
+    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_escrow_address', {}, function(escrowAddress, endpoint) {
+      assert(escrowAddress, "Returned escrow address undefined/blank!");
+      
+      //step 2: send the BTC over to this escrow address
+      WALLET.doTransaction(self.address(), "create_send",
+        { source: orderParams['source'],
+          destination: escrowAddress,
+          quantity: orderParams['give_quantity'],
+          asset: orderParams['give_asset'],
+          _divisible: orderParams['_give_divisible']
+        },
+        function(btcSendTxHash, data, endpoint, addressType, armoryUTx) {
+          assert(btcSendTxHash, "No valid txhash for BTC send");
+          assert(!armoryUTx); //can't make armory transactions giving BTC (should have been checked earlier)
+          $.jqlog.info("BTCEscrow BTC send completed. " + normalizeQuantity(orderParams['give_quantity'], true)
+            + " BTC sent to escrow address " + escrowAddress + ". TxHash: " + btcSendTxHash);
+      
+          //step 3: actually create the order record
+          var key = WALLET.getAddressObj(orderParams['source']).KEY;
+          makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_create', {
+            'wallet_id': WALLET.identifier(),
+            'order_tx_hash': orderTxHash,
+            'signed_order_tx_hash': key.signMessage(orderTxHash, 'base64'),
+            'escrow_address': escrowAddress,
+            'btc_deposit_tx_hash': btcSendTxHash
+            }, TIMEOUT_OTHER,
+            function(btcPayEscrowData, endpoint) {
+              $.jqlog.info("BTCEscrow record created for order tx hash " + orderTxHash
+                + "; RecordID: " + btcPayEscrowData['record_id'] + "@" + btcPayEscrowData['escrow_host']);
+              
+                var message = "Your order to " + orderAction + " <b class='notoQuantityColor'>"
+                 + (orderAction === 'buy' ? self.buyAmount() : self.sellAmount()) + "</b>"
+                 + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> has been placed.<br/><br/>"
+                 + "<b class='notoQuantityColor'>" + normalizeQuantity(orderParams['give_quantity'], true) + "</b>"
+                 + " <b class='notoAssetColor'>BTC</b> has been withdrawn and escrowed by the system"
+                 + " to complete this order. If the order is cancelled or expires, this BTC will be returned."; 
+                WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
+            }
+          );
+        }
+      );
+    });
+  }
+
   self.doBuy = function() {
     var give_quantity = denormalizeQuantity(self.buyTotal(), self.quoteAssetIsDivisible());
     var get_quantity = denormalizeQuantity(self.buyAmount(), self.baseAssetIsDivisible());
@@ -499,19 +557,14 @@ function ExchangeViewModel() {
     var onSuccess = function(txHash, data, endpoint, addressType, armoryUTx) {
       trackEvent('Exchange', 'Buy', self.dispAssetPair());
       
-      var message = "Your order to buy <b class='notoQuantityColor'>" + self.buyAmount() + "</b>"
-       + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> " + (armoryUTx ? "will be placed" : "has been placed") + ". "; 
-      WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
-      
-      if(AUTOBTCESCROW_SERVER && PREFERENCES['btcpay_method'] === 'autoescrow') {
-        makeJSONRPCCall('autobtcescrow_create',
-          {'order_tx_hash': txHash, 'btc_deposit_tx_hash': , 'wallet_id': WALLET.identifier()}, [AUTOBTCESCROW_SERVER], 
-          function(btcPayEscrowData, endpoint) {
-            self._restoreFromOrderMatches(data, btcPayEscrowData);
-          }
-        );
+      if(params['give_asset'] === 'BTC') {
+        doOrderAutoBTCEscrow(txHash, params, 'buy');  
       } else {
-      }
+        var message = "Your order to buy <b class='notoQuantityColor'>" + self.buyAmount() + "</b>"
+         + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> " + (armoryUTx ? "will be placed" : "has been placed") + ". "; 
+        WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
+      } 
+      
     }
 
     WALLET.doTransaction(self.selectedAddressForBuy(), "create_order", params, onSuccess);

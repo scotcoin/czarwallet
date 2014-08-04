@@ -544,8 +544,8 @@ function MessageFeed() {
         //If the BTCpay is marked as being processed by an automated escrow agent, ignore it 
         if(AUTOBTCESCROW_SERVER) {
           var orderMatchID = message['tx0_hash'] + message['tx1_hash'];
-          makeJSONRPCCall('autobtcescrow_get_by_order_match_id',
-            {'order_match_ids': [orderMatchID], 'wallet_id': WALLET.identifier()}, [AUTOBTCESCROW_SERVER], 
+          makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_by_order_match_id',
+            {'order_match_ids': [orderMatchID], 'wallet_id': WALLET.identifier()}, TIMEOUT_OTHER, 
             function(data, endpoint) {
               if(!data[orderMatchID]) {
                 $.jqlog.debug("AutoBTCEscrow: Adding to auto BTCPay in CW, since escrow system had no record for order match ID " + orderMatchID);

@@ -204,6 +204,8 @@ function LogonViewModel() {
     
     WALLET_OPTIONS_MODAL.selectedTheme(PREFERENCES['selected_theme']);
     WALLET_OPTIONS_MODAL.selectedLang(PREFERENCES['selected_lang']);
+    WALLET_OPTIONS_MODAL.addAutoBTCEscrowOptionIfAvailable();
+    WALLET_OPTIONS_MODAL.selectedBTCPayMethod(PREFERENCES['btcpay_method']);
     
     self.displayLicenseIfNecessary(mustSavePreferencesToServer);
   }

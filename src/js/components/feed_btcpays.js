@@ -226,8 +226,8 @@ function WaitingBTCPayFeedViewModel() {
             autoBTCEscrowOrderMatchIDs.push(data[i]['tx0_hash'] + data[i]['tx1_hash']);
           }
           
-          makeJSONRPCCall('autobtcescrow_get_by_order_match_id',
-            {'order_match_ids': autoBTCEscrowOrderMatchIDs, 'wallet_id': WALLET.identifier()}, [AUTOBTCESCROW_SERVER], 
+          makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_by_order_match_id',
+            {'order_match_ids': autoBTCEscrowOrderMatchIDs, 'wallet_id': WALLET.identifier()}, TIMEOUT_OTHER, 
             function(btcPayEscrowData, endpoint) {
               self._restoreFromOrderMatches(data, btcPayEscrowData);
             }

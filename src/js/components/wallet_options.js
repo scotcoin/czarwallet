@@ -17,14 +17,11 @@ function WalletOptionsModalViewModel() {
     {'id': 'auto',   'name': 'Automatic'},
     {'id': 'manual', 'name': 'Manual'}
   ]);
-  if(AUTOBTCESCROW_SERVER) {
-    self.availableBTCPayMethods.unshift({'id': 'autoescrow',   'name': 'Automatic with Escrow'});
-  }
   
   //set these properties to null as PREFERENCES is not available until login happens (they will be formally set on login)
-  self.btcPayMethod = ko.observable(null);
   self.selectedTheme = ko.observable(null);
   self.selectedLang = ko.observable(null);
+  self.selectedBTCPayMethod = ko.observable(null); //set in login.js
   self.ORIG_PREFERENCES_JSON = null;
   
   //Info table related props
@@ -59,12 +56,6 @@ function WalletOptionsModalViewModel() {
     return cwURLs() ? cwURLs().join(', ') : 'UNKNOWN';
   }, self);
 
-  self.btcPayMethod.subscribeChanged(function(newSelection, prevSelection) {
-    assert(newVal === 'autoescrow' || newVal === 'auto' || newVal == 'manual');
-    $.jqlog.debug("Changing btcpay_method from " + prevSelection['name'] + " to " + newSelection['name']);
-    PREFERENCES['btcpay_method'] = newSelection['id'];
-  });
-  
   self.selectedTheme.subscribeChanged(function(newSelection, prevSelection) {
     newSelection = ko.utils.arrayFirst(self.availableThemes(), function(item) { return newSelection === item.id; });
     prevSelection = (prevSelection
@@ -89,6 +80,22 @@ function WalletOptionsModalViewModel() {
     }
   });
   
+  self.selectedBTCPayMethod.subscribeChanged(function(newSelection, prevSelection) {
+    //if(!newSelection) newSelection = self.availableBTCPayMethods()[0]; //hack
+    //assert(_.contains(['autoescrow', 'auto', 'manual'], newSelection));
+    newSelection = ko.utils.arrayFirst(self.availableBTCPayMethods(), function(item) { return newSelection === item.id; });
+    prevSelection = (prevSelection
+      ? ko.utils.arrayFirst(self.availableBTCPayMethods(), function(item) { return prevSelection === item.id; }) : self.availableBTCPayMethods()[0]);
+    $.jqlog.debug("Changing btcpay_method from " + prevSelection['name'] + " to " + newSelection['name']);
+    PREFERENCES['btcpay_method'] = newSelection['id'];
+  });
+  
+  self.addAutoBTCEscrowOptionIfAvailable = function() {
+    if(AUTOBTCESCROW_SERVER) {
+      self.availableBTCPayMethods.unshift({'id': 'autoescrow', 'name': 'Automatic Escrow'});
+    }
+  }
+
   self.show = function(resetForm) {
     document.getElementById('urlPassword').autocomplete = 'off';
     self.urlPassword('');
@@ -97,15 +104,15 @@ function WalletOptionsModalViewModel() {
     self.ORIG_PREFERENCES_JSON = JSON.stringify(PREFERENCES); //store to be able to tell if we need to update prefs on the server
 
     //display current settings into the options UI
-    self.btcPayMethod(PREFERENCES['btcpay_method']);
     self.selectedTheme(PREFERENCES['selected_theme']);
     self.selectedLang(PREFERENCES['selected_lang']);
+    self.selectedBTCPayMethod(PREFERENCES['btcpay_method']);
     
     //ghetto ass hack -- select2 will not set itself properly when using the 'optionsValue' option, but it will
     // not fire off events when NOT using this option. wtf... o_O
-    $('#btcPayMethod').select2("val", self.btcPayMethod());
     $('#themeSelector').select2("val", self.selectedTheme());
     $('#langSelector').select2("val", self.selectedLang());
+    $('#btcPayMethodSelector').select2("val", self.selectedBTCPayMethod());
 
     self.getReflectedHostInfo();
     
