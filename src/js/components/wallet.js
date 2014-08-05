@@ -284,10 +284,29 @@ function WalletViewModel() {
                 }
                 WALLET.getAddressObj(address).addOrUpdateAsset(asset, assetsInfo[i], balancesData[j]['quantity'], escrowedBalance);
                 numBalProcessed += 1;
-                if (numBalProcessed == balancesData.length && onSuccess) return onSuccess();
+                if (numBalProcessed == balancesData.length) {
+
+                  //Also get auto BTC escrowed balances, if applicable
+                  if(AUTOBTCESCROW_SERVER) {
+                    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_escrow_balance_by_source_address',
+                       {'addresses': addresses, 'wallet_id': WALLET.identifier()}, TIMEOUT_OTHER,
+                      function(btcPayEscrowBalances, endpoint) {
+                        var addressObj = null;
+                        _.each(btcPayEscrowBalances, function(btcEscrowedBalance, btcAddress) {
+                          addressObj = WALLET.getAddressObj(btcAddress).getAssetObj('BTC').escrowedBalance(btcEscrowedBalance);  
+                        });
+                        
+                        //all done
+                        if(onSuccess) return onSuccess();              
+                      }
+                    );
+                  } else {
+                    if(onSuccess) return onSuccess();
+                  }
+                  
+                }
               }
             }
-
           });
           
         });

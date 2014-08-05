@@ -184,7 +184,7 @@ function LogonViewModel() {
       }
       
       //Update/upgrade any specific pref settings
-      if(!AUTOBTCESCROW_SERVER && PREFERENCES['btcpay_method'] == 'autoescrow') {
+      if(!AUTOBTCESCROW_SERVER && PREFERENCES['btcpay_method'] === 'autoescrow') {
         PREFERENCES['btcpay_method'] = 'auto'; //no auto BTC services enabled
         mustSavePreferencesToServer = true;
       }

@@ -284,7 +284,7 @@ function ExchangeViewModel() {
       trackEvent('Exchange', 'Sell', self.dispAssetPair());
       
       if(params['give_asset'] === 'BTC') {
-        doOrderAutoBTCEscrow(txHash, params, 'sell');  
+        self.doOrderAutoBTCEscrow(txHash, params, 'sell');  
       } else {
         var message = "Your order to sell <b class='notoQuantityColor'>" + self.sellAmount() + "</b>"
          + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> " + (armoryUTx ? "will be placed" : "has been placed") + ". "; 
@@ -321,6 +321,11 @@ function ExchangeViewModel() {
     message += '<tr><td><b>Total: </b></td><td style="text-align:right">' + self.sellTotal() + '</td><td>' + self.quoteAsset() + '</td></tr>';
     message += '<tr><td><b>Real estimated total: </b></td><td style="text-align:right">' + estimatedTotalPrice + '</td><td>' + self.quoteAsset() + '</td></tr>';
     message += '</table>';
+    
+    if(PREFERENCES['btcpay_method'] === 'autoescrow' && self.baseAsset() === 'BTC') {
+      message += ('<p class="bg-info padding-10">We will automatically escrow your BTC upon confirmation of this order.'
+        + 'It will be refunded to you if the order is cancelled or expires.</p>');
+    }
 
     bootbox.dialog({
       title: "Confirm your order",
@@ -475,7 +480,7 @@ function ExchangeViewModel() {
     assert(orderParams['give_asset'] === 'BTC');
     assert(orderAction === 'buy' || orderAction === 'sell');
 
-    if(!AUTOBTCESCROW_SERVER || PREFERENCES['btcpay_method'] !== 'autoescrow')
+    if(PREFERENCES['btcpay_method'] !== 'autoescrow')
       return;
       
     //step 1: fetch an escrow address to send the BTC to
@@ -558,7 +563,7 @@ function ExchangeViewModel() {
       trackEvent('Exchange', 'Buy', self.dispAssetPair());
       
       if(params['give_asset'] === 'BTC') {
-        doOrderAutoBTCEscrow(txHash, params, 'buy');  
+        self.doOrderAutoBTCEscrow(txHash, params, 'buy');  
       } else {
         var message = "Your order to buy <b class='notoQuantityColor'>" + self.buyAmount() + "</b>"
          + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> " + (armoryUTx ? "will be placed" : "has been placed") + ". "; 
@@ -602,6 +607,11 @@ function ExchangeViewModel() {
       message += '<tr><td colspan="3"><i>These fees are optional, go directly miners (not to us) and are non-refundable.</i></td></tr>';
     }
     message += '</table>';
+
+    if(PREFERENCES['btcpay_method'] === 'autoescrow' && self.quoteAsset() === 'BTC') {
+      message += ('<p class="bg-info padding-10">We will automatically escrow your BTC upon confirmation of this order.'
+        + 'It will be refunded to you if the order is cancelled or expires.</p>');
+    }
 
     bootbox.dialog({
       title: "Confirm your order",

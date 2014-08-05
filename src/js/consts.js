@@ -43,6 +43,11 @@ var ALLOW_UNCONFIRMED_INPUTS = true;  // allow use unconfirmed unspents
 
 var B26_DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+var DISABLED_FEATURES_SUPPORTED = ['betting', 'rps', 'dividend', 'exchange', 'leaderboard', 'portfolio', 'stats', 'history']; //what can be disabled
+var TRANSACTION_DELAY = 5000; // delay between transaction to avoid error -22 (vin reused)
+var TRANSACTION_MAX_RETRY = 5; // max retry when transaction failed (don't include first transaction, so 3 retry means 4 queries)
+var MAX_SUPPORT_CASE_PROBLEM_LEN = 4096;
+
 var ACTION_PENDING_NOTICE = "<b><u>This action will take some time to complete</u></b>, and will appear as a Pending Action until"
   + " confirmed on the network. <b class='errorColor'>Until that time, the wallet will not reflect the change. Please be patient.</b>";
 
@@ -195,6 +200,7 @@ var IS_DEV = (location.pathname == "/" && qs("dev") && qs("dev") != '0' ? true :
 var USE_TESTNET = (   (((location.pathname == "/" || location.pathname == "/src/" || location.pathname == "/build/") && qs("testnet") && qs("testnet") != '0')
                    || location.hostname.indexOf('testnet') != -1) ? true : false
                   );
+var ORIG_REFERER = document.referrer;
 
 var TESTNET_PASSPHRASE = qs("passphrase");
 
@@ -205,33 +211,17 @@ if (location.hash.indexOf('cp=') == 1) {
 }
 location.hash = '';
 
-
-var ORIG_REFERER = document.referrer;
-
-//CONSTANTS THAT DEPEND ON IS_DEV / USE_TESTNET
+//Paramers that depend on IS_DEV or USE_TESTNET
 var BLOCKEXPLORER_URL = USE_TESTNET ? "http://test.bitcore.io" : "http://live.bitcore.io";
-var GOOGLE_ANALYTICS_UAID = null; //will be set in counterwallet.js via servers.json
-var ROLLBAR_ACCESS_TOKEN = null; //will be set in counterwallet.js via servers.json
-var AUTOBTCESCROW_SERVER = null; //will be set in counterwallet.js via servers.json
-
-var TRANSACTION_DELAY = 5000 // delay between transaction to avoid error -22 (vin reused)
-var TRANSACTION_MAX_RETRY = 5 // max retry when transaction failed (don't include first transaction, so 3 retry means 4 queries)
-
 var DONATION_ADDRESS = USE_TESTNET ? 'n4MGGJBkW9RjRKBbZfBAceHDndhywvVPV9' : '19U6MmLLumsqxXSBMB5FgYXbezgXYC6Gpe';
-
 var APPROX_SECONDS_PER_BLOCK = USE_TESTNET ? 20 * 60 : 8 * 60; //a *rough* estimate on how many seconds per each block (used for estimating open order time left until expiration, etc)
 
+//Dynamically set parameters
 var USER_COUNTRY = ''; //set in login.js
 var CURRENT_PAGE_URL = ''; // set in loadUrl()
-
-var DISABLED_FEATURES_SUPPORTED = ['betting', 'rps', 'dividend', 'exchange', 'leaderboard', 'portfolio', 'stats', 'history']; //what can be disabled
-var DISABLED_FEATURES = []; //set in counterwallet.js
-
-// restricted action
-var RESTRICTED_AREA = null; //will be set in counterwallet.js via servers.json
-
-var MAX_SUPPORT_CASE_PROBLEM_LEN = 4096;
-
-
-
-
+//params set in counterwallet.js via servers.json
+var GOOGLE_ANALYTICS_UAID = ''; 
+var ROLLBAR_ACCESS_TOKEN = ''; 
+var AUTOBTCESCROW_SERVER = ''; 
+var DISABLED_FEATURES = [];
+var RESTRICTED_AREA = {}; 
