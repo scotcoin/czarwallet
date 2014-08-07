@@ -482,33 +482,46 @@ function ExchangeViewModel() {
 
     if(PREFERENCES['btcpay_method'] !== 'autoescrow')
       return;
+    
+    console.log("WAIT STARTT!!!");
+    setTimeout(function() {
+      console.log("WAIT END!!!");
+      
+      //still getting tx error -25 ...WTF!!
       
     //step 1: fetch an escrow address to send the BTC to
-    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_escrow_address', {}, function(escrowAddress, endpoint) {
+    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_escrow_address', {}, TIMEOUT_OTHER, function(escrowAddress, endpoint) {
       assert(escrowAddress, "Returned escrow address undefined/blank!");
       
-      //step 2: send the BTC over to this escrow address
-      WALLET.doTransaction(self.address(), "create_send",
+      //step 2: compose and sign the transaction that sends the BTC over to this escrow address
+      //failoverAPI("create_send",
+      WALLET.doTransaction(orderParams['source'], "create_send",  
         { source: orderParams['source'],
           destination: escrowAddress,
           quantity: orderParams['give_quantity'],
           asset: orderParams['give_asset'],
           _divisible: orderParams['_give_divisible']
         },
-        function(btcSendTxHash, data, endpoint, addressType, armoryUTx) {
-          assert(btcSendTxHash, "No valid txhash for BTC send");
-          assert(!armoryUTx); //can't make armory transactions giving BTC (should have been checked earlier)
-          $.jqlog.info("BTCEscrow BTC send completed. " + normalizeQuantity(orderParams['give_quantity'], true)
-            + " BTC sent to escrow address " + escrowAddress + ". TxHash: " + btcSendTxHash);
+        function(txHash, data, endpoint, addressType, armoryUTx) {
+        /*},
+        function(btcSendUnsignedTx, endpoint) {
+          assert(btcSendUnsignedTx, "Invalid signed tx result");
+          $.jqlog.info("BTCEscrow BTC send tx created to send " + normalizeQuantity(orderParams['give_quantity'], true)
+            + " BTC to escrow address " + escrowAddress);
+          
+          //sign the returned tx hex
+          //var key = WALLET.getAddressObj(orderParams['source']).KEY;
+          //var signedHex = key.checkAndSignRawTransaction(btcSendUnsignedTx, escrowAddress);*/
       
-          //step 3: actually create the order record
+          //step 3: actually create the escrow record
           var key = WALLET.getAddressObj(orderParams['source']).KEY;
           makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_create', {
             'wallet_id': WALLET.identifier(),
             'order_tx_hash': orderTxHash,
             'signed_order_tx_hash': key.signMessage(orderTxHash, 'base64'),
             'escrow_address': escrowAddress,
-            'btc_deposit_tx_hash': btcSendTxHash
+            'btc_deposit_tx_hash': txHash
+            //'btc_btc_send_signed_tx': signedHex
             }, TIMEOUT_OTHER,
             function(btcPayEscrowData, endpoint) {
               $.jqlog.info("BTCEscrow record created for order tx hash " + orderTxHash
@@ -526,6 +539,7 @@ function ExchangeViewModel() {
         }
       );
     });
+    }, TRANSACTION_DELAY);
   }
 
   self.doBuy = function() {

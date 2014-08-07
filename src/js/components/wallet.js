@@ -564,9 +564,6 @@ function WalletViewModel() {
       verifyDestAddr = data['_btc_dividend_dests'];
       delete data['_btc_dividend_dests'];
     }
-    if (typeof(verifyDestAddr) == 'string') {
-      verifyDestAddr = [verifyDestAddr];
-    }
     
     //Do the transaction
     multiAPIConsensus(action, data,

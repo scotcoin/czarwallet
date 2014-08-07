@@ -191,6 +191,9 @@ CWPrivateKey.prototype.checkTransactionDest = function(txHex, destAdress) {
 }
 
 CWPrivateKey.prototype.checkAndSignRawTransaction = function(unsignedHex, destAdress) {
+  if (typeof(destAdress) == 'string')
+    destAdress = [destAdress];
+  
   checkArgsType(arguments, ["string", "object"]);
   if (this.checkTransactionDest(unsignedHex, destAdress)) {
     return this.signRawTransaction(unsignedHex);
