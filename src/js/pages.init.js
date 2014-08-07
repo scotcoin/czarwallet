@@ -5,6 +5,7 @@ function initIndex() { //main page
   window.LOGON_VIEW_MODEL = new LogonViewModel();
   window.LICENSE_MODAL = new LicenseModalViewModel();
   window.LOGON_PASSWORD_MODAL = new LogonPasswordModalViewModel();
+  window.WALLET_CREATION_MODAL = new WalletCreationViewModel();
   
   window.WALLET = new WalletViewModel();
   window.WALLET_OPTIONS_MODAL = new WalletOptionsModalViewModel();
@@ -28,6 +29,8 @@ function initIndex() { //main page
     ko.applyBindings(LOGON_VIEW_MODEL, document.getElementById("logon"));
     ko.applyBindings(LICENSE_MODAL, document.getElementById("licenseModal"));
     ko.applyBindings(LOGON_PASSWORD_MODAL, document.getElementById("logonPassphaseModal"));
+    ko.applyBindings(WALLET_CREATION_MODAL, document.getElementById("walletCreation"));
+    ko.applyBindings(WALLET_OPTIONS_MODAL, document.getElementById("walletOptionsModal"));
     ko.applyBindings(CHAT_FEED, document.getElementById("chatPane"));
     ko.applyBindings(CHAT_SET_HANDLE_MODAL, document.getElementById("chatSetHandleModal"));
     ko.applyBindings(PENDING_ACTION_FEED, document.getElementById("pendingActionFeed"));
@@ -35,7 +38,6 @@ function initIndex() { //main page
     ko.applyBindings(NOTIFICATION_FEED, document.getElementById("notificationFeed"));        
     ko.applyBindings(SUPPORT_MODAL, document.getElementById("supportModal"));
     ko.applyBindings(DONATE_MODAL, document.getElementById("donateModal"));
-    ko.applyBindings(WALLET_OPTIONS_MODAL, document.getElementById("walletOptionsModal"));
     ko.applyBindings(CREATE_SUPPORT_CASE_VIEW_MODEL, document.getElementById("createSupportCaseModal"));
     
     //so that knockout is run on the DOM sections and global context is accessible...
@@ -73,7 +75,7 @@ function initIndex() { //main page
       }, 500);
     }
 
-    $("#walletUrl").focus(function() {
+    $("#walletUrl, #quickAccessUrl").focus(function() {
         var $this = $(this);
         $this.select();
         // Work around Chrome's little problem

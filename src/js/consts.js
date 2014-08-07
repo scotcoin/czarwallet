@@ -20,7 +20,7 @@ var FEE_FRACTION_DEFAULT_FILTER = .95;
 var BTC_ORDER_MIN_AMOUNT = 0.01;
 
 var DEFAULT_NUM_ADDRESSES = 1; //default number of addresses to generate. Go with 1 for now to be more newbie friendly
-var MAX_ADDRESSES = 20; //totall arbitrary :)
+var MAX_ADDRESSES = 20; //totally arbitrary :)
 
 //Order expiration
 var ORDER_DEFAULT_EXPIRATION = 1000; //num blocks until expiration (at ~9 min per block this is ~6.75 days)
@@ -219,9 +219,17 @@ var APPROX_SECONDS_PER_BLOCK = USE_TESTNET ? 20 * 60 : 8 * 60; //a *rough* estim
 //Dynamically set parameters
 var USER_COUNTRY = ''; //set in login.js
 var CURRENT_PAGE_URL = ''; // set in loadUrl()
+
 //params set in counterwallet.js via servers.json
 var GOOGLE_ANALYTICS_UAID = ''; 
 var ROLLBAR_ACCESS_TOKEN = ''; 
 var AUTOBTCESCROW_SERVER = ''; 
 var DISABLED_FEATURES = [];
 var RESTRICTED_AREA = {}; 
+
+
+var MAX_SUPPORT_CASE_PROBLEM_LEN = 4096;
+
+var QUOTE_ASSETS = [] // initalized with counterblock is_ready()
+
+
