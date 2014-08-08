@@ -14,6 +14,7 @@ function WalletOptionsModalViewModel() {
     //additional languages in the future
   ]);
   self.availableBTCPayMethods = ko.observableArray([
+    {'id': 'autoescrow',   'name': 'Automatic Escrow'},
     {'id': 'auto',   'name': 'Automatic'},
     {'id': 'manual', 'name': 'Manual'}
   ]);
