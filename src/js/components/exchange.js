@@ -491,69 +491,89 @@ function ExchangeViewModel() {
     } 
   }
 
+
+  //step 1: fetch an escrow address to send the BTC to
+  self.getBTCEscrowAddress = function(orderTxHash, orderParams, orderAction) {
+
+    var onSuccess = function(escrowAddress, endpoint) {
+      assert(escrowAddress, "Returned escrow address undefined/blank!");
+      self.sendBTCEscrow(orderTxHash, orderParams, orderAction, escrowAddress, 1);
+    }
+
+    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_escrow_address', {}, TIMEOUT_OTHER, onSuccess);
+  }
+
+
+  //step 2: sends the BTC over to the escrow address
+  self.sendBTCEscrow = function(orderTxHash, orderParams, orderAction, escrowAddress, retry) {
+
+    var sendParams = { 
+      source: orderParams['source'],
+      destination: escrowAddress,
+      quantity: orderParams['give_quantity'],
+      asset: orderParams['give_asset'],
+      _divisible: orderParams['_give_divisible']
+    };
+
+    var onSuccess = function(depositTxHash, data, endpoint, addressType, armoryUTx) {
+      self.createBTCEscrowRecord(orderTxHash, orderParams, orderAction, escrowAddress, depositTxHash, armoryUTx)
+    }
+
+    var onError = function(jqXHR, textStatus, errorThrown) {
+      if (retry < TRANSACTION_MAX_RETRY) {
+
+        $.jqlog.debug("TRANSACTION FAILED => RETRY " + retry + "/" + TRANSACTION_MAX_RETRY);
+
+        setTimeout(function() {      
+          self.sendBTCEscrow(orderTxHash, orderParams, orderAction, escrowAddress, retry + 1);
+        }, TRANSACTION_DELAY);
+
+      } else {
+        return defaultErrorHandler(jqXHR, textStatus, errorThrown);
+      }
+    }
+
+    WALLET.doTransaction(orderParams['source'], "create_send", sendParams, onSuccess, onError);
+  }
+
+  //step 3: actually create the escrow record
+  self.createBTCEscrowRecord = function(orderTxHash, orderParams, orderAction, escrowAddress, depositTxHash, armoryUTx) {
+
+    var key = WALLET.getAddressObj(orderParams['source']).KEY;
+
+    var escrowRecordParams = {
+      'wallet_id': WALLET.identifier(),
+      'order_tx_hash': orderTxHash,
+      'signed_order_tx_hash': key.signMessage(orderTxHash, 'base64'),
+      'escrow_address': escrowAddress,
+      'btc_deposit_tx_hash': depositTxHash
+    };
+
+    var onSuccess = function(btcPayEscrowData, endpoint) {
+      $.jqlog.info("BTCEscrow record created for order tx hash " + orderTxHash
+        + "; RecordID: " + btcPayEscrowData['record_id'] + "@" + btcPayEscrowData['escrow_host']);
+      
+      var message = "Your order to " + orderAction + " <b class='notoQuantityColor'>"
+       + (orderAction === 'buy' ? self.buyAmount() : self.sellAmount()) + "</b>"
+       + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> has been placed.<br/><br/>"
+       + "<b class='notoQuantityColor'>" + normalizeQuantity(orderParams['give_quantity'], true) + "</b>"
+       + " <b class='notoAssetColor'>BTC</b> has been withdrawn and escrowed by the system"
+       + " to complete this order. If the order is cancelled or expires, this BTC will be returned."; 
+
+      WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
+    }
+
+    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_create', escrowRecordParams, TIMEOUT_OTHER, onSuccess);
+  }
+
+  // Launch 3 steps for auto BTC escrow
   self.doOrderAutoBTCEscrow = function(orderTxHash, orderParams, orderAction) {
     assert(orderParams['give_asset'] === 'BTC');
     assert(orderAction === 'buy' || orderAction === 'sell');
-
-    if(PREFERENCES['btcpay_method'] !== 'autoescrow')
-      return;
+    if(PREFERENCES['btcpay_method'] !== 'autoescrow') return;
     
-    console.log("WAIT STARTT!!!");
-    setTimeout(function() {
-      console.log("WAIT END!!!");
-      
-      //still getting tx error -25 ...WTF!!
-      
-    //step 1: fetch an escrow address to send the BTC to
-    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_escrow_address', {}, TIMEOUT_OTHER, function(escrowAddress, endpoint) {
-      assert(escrowAddress, "Returned escrow address undefined/blank!");
-      
-      //step 2: compose and sign the transaction that sends the BTC over to this escrow address
-      //failoverAPI("create_send",
-      WALLET.doTransaction(orderParams['source'], "create_send",  
-        { source: orderParams['source'],
-          destination: escrowAddress,
-          quantity: orderParams['give_quantity'],
-          asset: orderParams['give_asset'],
-          _divisible: orderParams['_give_divisible']
-        },
-        function(txHash, data, endpoint, addressType, armoryUTx) {
-        /*},
-        function(btcSendUnsignedTx, endpoint) {
-          assert(btcSendUnsignedTx, "Invalid signed tx result");
-          $.jqlog.info("BTCEscrow BTC send tx created to send " + normalizeQuantity(orderParams['give_quantity'], true)
-            + " BTC to escrow address " + escrowAddress);
-          
-          //sign the returned tx hex
-          //var key = WALLET.getAddressObj(orderParams['source']).KEY;
-          //var signedHex = key.checkAndSignRawTransaction(btcSendUnsignedTx, escrowAddress);*/
-      
-          //step 3: actually create the escrow record
-          var key = WALLET.getAddressObj(orderParams['source']).KEY;
-          makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_create', {
-            'wallet_id': WALLET.identifier(),
-            'order_tx_hash': orderTxHash,
-            'signed_order_tx_hash': key.signMessage(orderTxHash, 'base64'),
-            'escrow_address': escrowAddress,
-            'btc_deposit_tx_hash': txHash
-            //'btc_btc_send_signed_tx': signedHex
-            }, TIMEOUT_OTHER,
-            function(btcPayEscrowData, endpoint) {
-              $.jqlog.info("BTCEscrow record created for order tx hash " + orderTxHash
-                + "; RecordID: " + btcPayEscrowData['record_id'] + "@" + btcPayEscrowData['escrow_host']);
-              
-                var message = "Your order to " + orderAction + " <b class='notoQuantityColor'>"
-                 + (orderAction === 'buy' ? self.buyAmount() : self.sellAmount()) + "</b>"
-                 + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> has been placed.<br/><br/>"
-                 + "<b class='notoQuantityColor'>" + normalizeQuantity(orderParams['give_quantity'], true) + "</b>"
-                 + " <b class='notoAssetColor'>BTC</b> has been withdrawn and escrowed by the system"
-                 + " to complete this order. If the order is cancelled or expires, this BTC will be returned."; 
-                WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
-            }
-          );
-        }
-      );
-    });
+    setTimeout(function() {      
+      self.getBTCEscrowAddress(orderTxHash, orderParams, orderAction);
     }, TRANSACTION_DELAY);
   }
 
