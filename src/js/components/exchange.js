@@ -529,7 +529,7 @@ function ExchangeViewModel() {
         }, TRANSACTION_DELAY);
 
       } else {
-        return defaultErrorHandler(jqXHR, textStatus, errorThrown);
+        bootbox.alert("Transaction failed.");
       }
     }
 
