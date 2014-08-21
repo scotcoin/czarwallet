@@ -400,7 +400,7 @@ function UpcomingBTCPayFeedViewModel() {
           }
         );
 
-      } else {
+      } else if(PREFERENCES['btcpay_method'] != 'auto') {
 
         //The user doesn't have the necessary balance on the address... let them know and add the BTC as pending
         WAITING_BTCPAY_FEED.add(btcPayData);

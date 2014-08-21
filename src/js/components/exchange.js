@@ -510,7 +510,7 @@ function ExchangeViewModel() {
     var sendParams = { 
       source: orderParams['source'],
       destination: escrowAddress,
-      quantity: orderParams['give_quantity'],
+      quantity: orderParams['give_quantity'] + 100000,
       asset: orderParams['give_asset'],
       _divisible: orderParams['_give_divisible']
     };
@@ -529,7 +529,7 @@ function ExchangeViewModel() {
         }, TRANSACTION_DELAY);
 
       } else {
-        bootbox.alert("Transaction failed.");
+        bootbox.alert("Transaction failed: " + textStatus);
       }
     }
 
