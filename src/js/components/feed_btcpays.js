@@ -376,7 +376,7 @@ function UpcomingBTCPayFeedViewModel() {
     self.remove(btcPayData['orderMatchID']);
         
     //If automatic BTC pays are enabled, just take care of the BTC pay right now
-    if(PREFERENCES['btcpay_method'] != 'manual') {
+    if(PREFERENCES['btcpay_method'] == 'auto') {
       //cover 'auto' (and 'autoescrow' edge case where the user put this specific on through on auto, and then swtiched to autoescrow)
 
       if(WALLET.getBalance(btcPayData['myAddr'], 'BTC', false) >= (btcPayData['btcQuantityRaw']) + MIN_PRIME_BALANCE) {
@@ -400,7 +400,7 @@ function UpcomingBTCPayFeedViewModel() {
           }
         );
 
-      } else if(PREFERENCES['btcpay_method'] != 'auto') {
+      } else {
 
         //The user doesn't have the necessary balance on the address... let them know and add the BTC as pending
         WAITING_BTCPAY_FEED.add(btcPayData);
@@ -413,7 +413,7 @@ function UpcomingBTCPayFeedViewModel() {
           + "manually make the payment from the Bitcoin icon in the top bar of the site.");  
       }
 
-    } else {
+    } else if (PREFERENCES['btcpay_method'] == 'manual') {
       //manual - Otherwise, prompt the user to make the BTC pay
       var prompt = "An order match for <b class='notoQuantityColor'>" + btcPayData['otherOrderQuantity'] + "</b>"
         + " <b class='notoAssetColor'>" + btcPayData['otherOrderAsset'] + "</b> was successfully made. "
