@@ -134,9 +134,15 @@ function ExchangeViewModel() {
   ********************************************/
 
   self.highestBidPrice = ko.observable();
-  self.sellPrice = ko.observable();
+  self.sellPrice = ko.observable(0).extend({
+    required: true,
+    isValidPositiveQuantity: self
+  });
   self.sellAmount = ko.observable(0);
-  self.sellTotal = ko.observable(0);
+  self.sellTotal = ko.observable(0).extend({
+    required: true,
+    isValidPositiveQuantity: self
+  });
   self.sellPriceHasFocus = ko.observable();
   self.sellAmountHasFocus = ko.observable();
   self.sellTotalHasFocus = ko.observable();
@@ -200,7 +206,11 @@ function ExchangeViewModel() {
 
   self.sellTotal.subscribe(function(total) {
     if (!self.sellTotalHasFocus() || !self.sellPrice()) return;
-    self.sellAmount(noExponents(divFloat(total, self.sellPrice())));
+    if (total == 0) {
+      self.sellAmount(0);
+    } else {
+      self.sellAmount(noExponents(divFloat(total, self.sellPrice())));
+    }
   })
 
   self.sellAmount.extend({
@@ -216,7 +226,9 @@ function ExchangeViewModel() {
   });
 
   self.sellValidation = ko.validatedObservable({
-    sellAmount: self.sellAmount
+    sellAmount: self.sellAmount,
+    sellPrice: self.sellPrice,
+    sellTotal: self.sellTotal
   });
 
   self.sellFee = ko.computed(function() {
@@ -260,7 +272,7 @@ function ExchangeViewModel() {
     var get_quantity = denormalizeQuantity(self.sellTotal(), self.quoteAssetIsDivisible());
     var fee_required = 0;
     var fee_provided = MIN_FEE;
-    var expiration = ORDER_DEFAULT_EXPIRATION;
+    var expiration = parseInt(WALLET_OPTIONS_MODAL.orderDefaultExpiration());
 
     if (self.quoteAsset() == 'BTC') {
       fee_required = mulFloat(get_quantity, WALLET_OPTIONS_MODAL.defaultBTCFeeRequiredPct()/100);
@@ -270,7 +282,7 @@ function ExchangeViewModel() {
     if (self.baseAsset() == 'BTC') {
       fee_provided = mulFloat(give_quantity, WALLET_OPTIONS_MODAL.defaultBTCFeeProvidedPct()/100);
       fee_provided = Math.ceil(fee_provided);
-      expiration = ORDER_BTCSELL_DEFAULT_EXPIRATION;
+      expiration = parseInt(WALLET_OPTIONS_MODAL.orderBTCSellDefaultExpiration());
     }
 
     var params = {
@@ -370,8 +382,14 @@ function ExchangeViewModel() {
   ********************************************/
 
   self.lowestAskPrice = ko.observable();
-  self.buyPrice = ko.observable();
-  self.buyAmount = ko.observable(0);
+  self.buyPrice = ko.observable(0).extend({
+    required: true,
+    isValidPositiveQuantity: self
+  });
+  self.buyAmount = ko.observable(0).extend({
+    required: true,
+    isValidPositiveQuantity: self
+  });
   self.buyTotal = ko.observable(0);
   self.buyPriceHasFocus = ko.observable();
   self.buyAmountHasFocus = ko.observable();
@@ -419,7 +437,11 @@ function ExchangeViewModel() {
     var bal = self.balances[value + '_' + self.quoteAsset()];
     self.availableBalanceForBuy(bal);
     if (self.lowestAskPrice()) {
-      self.obtainableForBuy(divFloat(bal, self.lowestAskPrice()));  
+      if (bal == 0) {
+        self.obtainableForBuy(0);
+      } else {
+        self.obtainableForBuy(divFloat(bal, self.lowestAskPrice()));
+      }
     }
   })
 
@@ -435,7 +457,11 @@ function ExchangeViewModel() {
 
   self.buyTotal.subscribe(function(total) {
     if (!self.buyTotalHasFocus() || !self.buyPrice()) return;
-    self.buyAmount(noExponents(divFloat(total, self.buyPrice())));
+    if (total == 0) {
+      self.buyAmount(0);
+    } else {
+      self.buyAmount(noExponents(divFloat(total, self.buyPrice())));
+    }
   })
 
   self.buyTotal.extend({
@@ -451,7 +477,9 @@ function ExchangeViewModel() {
   });
 
   self.buyValidation = ko.validatedObservable({
-    buyTotal: self.buyTotal
+    buyTotal: self.buyTotal,
+    buyPrice: self.buyPrice,
+    buyAmount: self.buyAmount
   });
 
   self.buyFee = ko.computed(function() {
@@ -487,7 +515,12 @@ function ExchangeViewModel() {
     var total = self.availableBalanceForBuy();
     self.buyTotal(total);
     if (self.buyPrice()) {
-      self.buyAmount(divFloat(total, self.buyPrice()));
+      if (total==0) {
+        self.buyAmount(0);
+      } else {
+        self.buyAmount(divFloat(total, self.buyPrice()));
+      }
+      
     } 
   }
 
@@ -570,7 +603,7 @@ function ExchangeViewModel() {
     var get_quantity = denormalizeQuantity(self.buyAmount(), self.baseAssetIsDivisible());
     var fee_required = 0;
     var fee_provided = MIN_FEE;
-    var expiration = ORDER_DEFAULT_EXPIRATION;
+    var expiration = parseInt(WALLET_OPTIONS_MODAL.orderDefaultExpiration());
 
     if (self.baseAsset() == 'BTC') {
       fee_required = mulFloat(get_quantity, WALLET_OPTIONS_MODAL.defaultBTCFeeRequiredPct()/100);
@@ -580,7 +613,7 @@ function ExchangeViewModel() {
     if (self.quoteAsset() == 'BTC') {
       fee_provided = mulFloat(give_quantity, WALLET_OPTIONS_MODAL.defaultBTCFeeProvidedPct()/100);
       fee_provided = Math.ceil(fee_provided);
-      expiration = ORDER_BTCSELL_DEFAULT_EXPIRATION;
+      expiration = parseInt(WALLET_OPTIONS_MODAL.orderBTCSellDefaultExpiration());
     }
 
     var params = {

@@ -26,7 +26,7 @@
 
     <!-- Counterwallet custom styles -->
     <!-- build:css css/counterwallet-min.css -->
-    <link rel="stylesheet" type="text/css" media="screen" href="css/default.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="vendors/counterwebdeps/css/default.css">
     <link rel="stylesheet" type="text/css" media="screen" href="css/overrides.css">
     <link rel="stylesheet" type="text/css" media="screen" href="css/misc.css">
     <link rel="stylesheet" type="text/css" media="screen" href="css/components/logon.css">
@@ -379,6 +379,9 @@
             <h4 class="modal-title">License Agreement</h4>
           </div>
           <div class="modal-body no-padding">
+            <p data-bind="visible: !WALLET.isExplicitlyNew()" class="formPadded bg-warning padding-10">
+                If you are being asked to accept the Terms and Conditions, this is the first time you are opening this
+                wallet. <b>If you are trying to access an old wallet, you have typed the passphrase incorrectly.</b></p>
             <p class="formPadded">You must read and accept the following agreement in order to use this site:</p>
             <form class="smart-form"><fieldset>
               <section><div class="row">
@@ -494,7 +497,7 @@
     </div><!-- /.modal -->
     
     <!-- modal for options window (in logged in interface) -->
-    <div data-bind="showModal: shown" id="walletOptionsModal" class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="walletOptionsModal" aria-hidden="true">
+    <div data-bind="showModal: shown" id="walletOptionsModal" class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="walletOptionsModal" aria-hidden="true" data-bind="validationOptions: { insertMessages: false }">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -579,6 +582,21 @@
                 <div class="col col-sm-3">
                   <label class="input">
                     <input class="prefFieldPercent" name="maxBTCFeeRequiredPct" type="text" data-bind="value: maxBTCFeeRequiredPct">%
+                  </label>
+              </div></section>
+
+              <section data-bind="visible: showAdvancedOptions"><div class="row">
+                <div class="col col-sm-3">Orders default expiration</div>
+                <div class="col col-sm-3">
+                  <label class="input">
+                    <input class="prefFieldPercent" name="orderDefaultExpiration" type="text" data-bind="value: orderDefaultExpiration">
+                  </label>
+                  <span class="invalid text-danger" data-bind="validationMessage: orderDefaultExpiration"></span>
+                </div>
+                <div class="col col-sm-3">Sell BTC Orders default expiration</div>
+                <div class="col col-sm-3">
+                  <label class="input">
+                    <input class="prefFieldPercent" name="orderBTCSellDefaultExpiration" type="text" data-bind="value: orderBTCSellDefaultExpiration">
                   </label>
                 </div>
               </div></section>
@@ -888,7 +906,6 @@
     <script src="vendors/technical-indicators/index.js"></script>
 
     <!-- Other external libraries. -->
-    <script src="js/qrcode.js"></script>  <!-- from http://d-project.googlecode.com/svn/trunk/misc/qrcode/js/ -->
     <script src="vendors/jsdecimal/lib/decimal.js"></script> <!-- for accurate arithmetic price operations -->
     <script src="vendors/select2/select2.min.js"></script> <!-- JQUERY SELECT2 INPUT -->
 
@@ -918,17 +935,23 @@
 
     <!-- COUNTERWALLET JS INCLUDES -->
     <!-- build:js js/counterwallet-min.js --> 
-    <script src="js/consts.js"></script>
-    <script src="js/mnemonic.js"></script>
-    <script src="js/util.bitcore.js"></script>  
+  
+    <!-- counterwebdeps -->
+    <script src="vendors/counterwebdeps/js/external/mnemonic.js"></script>
+    <script src="vendors/counterwebdeps/js/external/qrcode.js"></script>  <!-- from http://d-project.googlecode.com/svn/trunk/misc/qrcode/js/ -->
+    <script src="vendors/counterwebdeps/js/consts.js"></script>
+    <script src="vendors/counterwebdeps/js/util.generic.js"></script>  
+    <script src="vendors/counterwebdeps/js/util.analytics.js"></script>  
+    <script src="vendors/counterwebdeps/js/util.bitcore.js"></script>  
+    <script src="vendors/counterwebdeps/js/util.api.js"></script>
+    <script src="vendors/counterwebdeps/js/util.bitcoin.js"></script>
+    <script src="vendors/counterwebdeps/js/util.knockout.js"></script>
     
+    <!-- counterwallet-specific -->
+    <script src="js/consts.js"></script>
     <script src="js/util.js"></script> 
-    <script src="js/util.api.js"></script>
-    <script src="js/util.bitcoin.js"></script>
-    <script src="js/util.knockout.js"></script>
     <script src="js/counterwallet.js"></script>
     <script src="js/counterblock.js"></script>
-
     <script src="js/messagefeed.js"></script>
     <script src="js/components/wallet.js"></script>
     <script src="js/components/wallet_options.js"></script>
@@ -940,7 +963,6 @@
     <script src="js/components/feed_pending_actions.js"></script>
     <script src="js/components/feed_btcpays.js"></script>
     <script src="js/components/chatfeed.js"></script>
-    
     <script src="js/components/balances.js"></script>
     <script src="js/components/balances_assets.js"></script>
     <script src="js/components/exchange.js"></script>
@@ -957,8 +979,6 @@
 
     <script src="js/pages.init.js"></script>
     <!-- endbuild -->
-
-
 
   </body>
 </html>
