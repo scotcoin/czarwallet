@@ -145,7 +145,7 @@ function MessageFeed() {
   self.removeOrder = function(hash) {
     var address = false
     for (var i in self.OPEN_ORDERS) {
-      if (self.OPEN_ORDERS[i]['tx_hash'] == hash) {
+      if (self.OPEN_ORDERS[i] && self.OPEN_ORDERS[i]['tx_hash'] == hash) {
         address = self.OPEN_ORDERS[i]['source'];
         self.OPEN_ORDERS = self.OPEN_ORDERS.splice(i, 1);
       }
@@ -457,6 +457,7 @@ function MessageFeed() {
     } else if(category == "broadcasts") {
       //TODO
     } else if(category == "btcpays") {
+      UPCOMING_BTCPAY_FEED.remove(message['order_match_id']);
       var btcpay = WAITING_BTCPAY_FEED.remove(message['order_match_id']);
       //^ covers the case where make a BTC payment and log out before it is confirmed, then log back in and see it confirmed
       if (btcpay) {

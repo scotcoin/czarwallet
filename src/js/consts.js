@@ -76,3 +76,6 @@ var RESTRICTED_AREA = {
 
 var MAX_SUPPORT_CASE_PROBLEM_LEN = 4096;
 var QUOTE_ASSETS = []; // initalized with counterblock is_ready()
+
+var ESCROW_COMMISSION = 0.005;
+var BTCPAY_FEE_RETAINER = 100000;

@@ -129,6 +129,88 @@ function ExchangeViewModel() {
 
   /********************************************
 
+  BTCPAY AUTOESCROW 
+  
+  ********************************************/
+
+
+   //step 1: fetch an escrow address to send the BTC to
+  self.getBTCEscrowAddress = function(orderTxHash, orderParams, orderAction) {
+
+    var key = WALLET.getAddressObj(orderParams['source']).KEY;
+
+    var params = {
+      'order_source': orderParams['source'], 
+      'order_tx_hash': orderTxHash, 
+      'order_signed_tx_hash': key.signMessage(orderTxHash, 'base64'), 
+      'wallet_id': WALLET.identifier()
+    }
+
+    var onSuccess = function(escrowInfo, endpoint) {
+      assert(escrowInfo['escrow_address'], "Returned escrow address undefined/blank!");
+      self.sendBTCEscrow(orderTxHash, orderParams, orderAction, escrowInfo, 1);
+    }
+
+    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_escrow_address', params, TIMEOUT_OTHER, onSuccess);
+  }
+
+
+  //step 2: sends the BTC over to the escrow address
+  self.sendBTCEscrow = function(orderTxHash, orderParams, orderAction, escrowInfo, retry) {
+
+    var sendParams = { 
+      source: orderParams['source'],
+      destination: escrowInfo['escrow_address'],
+      quantity: orderParams['give_quantity'] + BTCPAY_FEE_RETAINER + Math.ceil(orderParams['give_quantity'] * ESCROW_COMMISSION),
+      asset: orderParams['give_asset'],
+      _divisible: orderParams['_give_divisible']
+    };
+
+    var onSuccess = function(depositTxHash, data, endpoint, addressType, armoryUTx) {
+      $.jqlog.info("BTCEscrow record " + escrowInfo['_id'] + "created for order tx hash " + orderTxHash);
+      
+      var message = "Your order to " + orderAction + " <b class='notoQuantityColor'>"
+       + (orderAction === 'buy' ? self.buyAmount() : self.sellAmount()) + "</b>"
+       + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> has been placed.<br/><br/>"
+       + "<b class='notoQuantityColor'>" + normalizeQuantity(orderParams['give_quantity'], true) + "</b>"
+       + " <b class='notoAssetColor'>BTC</b> has been withdrawn and escrowed by the system"
+       + " to complete this order. If the order is cancelled or expires, this BTC will be returned."; 
+
+      WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
+    }
+
+    var onError = function(jqXHR, textStatus, errorThrown) {
+      if (retry < TRANSACTION_MAX_RETRY) {
+
+        $.jqlog.debug("TRANSACTION FAILED => RETRY " + retry + "/" + TRANSACTION_MAX_RETRY);
+
+        setTimeout(function() {      
+          self.sendBTCEscrow(orderTxHash, orderParams, orderAction, escrowAddress, retry + 1);
+        }, TRANSACTION_DELAY);
+
+      } else {
+        bootbox.alert("Transaction failed: " + textStatus);
+      }
+    }
+
+    WALLET.doTransaction(orderParams['source'], "create_send", sendParams, onSuccess, onError);
+  }
+
+  // Launch 2 steps for auto BTC escrow
+  self.doOrderAutoBTCEscrow = function(orderTxHash, orderParams, orderAction) {
+    assert(orderParams['give_asset'] === 'BTC');
+    assert(orderAction === 'buy' || orderAction === 'sell');
+    if(PREFERENCES['btcpay_method'] !== 'autoescrow') return;
+    
+    setTimeout(function() {      
+      self.getBTCEscrowAddress(orderTxHash, orderParams, orderAction);
+    }, TRANSACTION_DELAY);
+  }
+
+
+
+  /********************************************
+
   SELL FORM BEGIN
   
   ********************************************/
@@ -206,7 +288,7 @@ function ExchangeViewModel() {
 
   self.sellTotal.subscribe(function(total) {
     if (!self.sellTotalHasFocus() || !self.sellPrice()) return;
-    if (total == 0) {
+    if (self.sellPrice() == 0) {
       self.sellAmount(0);
     } else {
       self.sellAmount(noExponents(divFloat(total, self.sellPrice())));
@@ -301,13 +383,10 @@ function ExchangeViewModel() {
     var onSuccess = function(txHash, data, endpoint, addressType, armoryUTx) {
       trackEvent('Exchange', 'Sell', self.dispAssetPair());
       
-      if(params['give_asset'] === 'BTC') {
-        self.doOrderAutoBTCEscrow(txHash, params, 'sell');  
-      } else {
-        var message = "Your order to sell <b class='notoQuantityColor'>" + self.sellAmount() + "</b>"
-         + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> " + (armoryUTx ? "will be placed" : "has been placed") + ". "; 
-        WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
-      }
+      var message = "Your order to sell <b class='notoQuantityColor'>" + self.sellAmount() + "</b>"
+       + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> " + (armoryUTx ? "will be placed" : "has been placed") + ". "; 
+      WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
+    
     }
 
     WALLET.doTransaction(self.selectedAddressForSell(), "create_order", params, onSuccess);
@@ -342,10 +421,6 @@ function ExchangeViewModel() {
     message += '<tr><td><b>Real estimated total: </b></td><td style="text-align:right">' + estimatedTotalPrice + '</td><td>' + self.quoteAsset() + '</td></tr>';
     message += '</table>';
     
-    if(PREFERENCES['btcpay_method'] === 'autoescrow' && self.baseAsset() === 'BTC') {
-      message += ('<p class="bg-info padding-10">We will automatically escrow your BTC upon confirmation of this order.'
-        + 'It will be refunded to you if the order is cancelled or expires.</p>');
-    }
 
     bootbox.dialog({
       title: "Confirm your order",
@@ -437,7 +512,7 @@ function ExchangeViewModel() {
     var bal = self.balances[value + '_' + self.quoteAsset()];
     self.availableBalanceForBuy(bal);
     if (self.lowestAskPrice()) {
-      if (bal == 0) {
+      if (self.lowestAskPrice() == 0) {
         self.obtainableForBuy(0);
       } else {
         self.obtainableForBuy(divFloat(bal, self.lowestAskPrice()));
@@ -457,7 +532,7 @@ function ExchangeViewModel() {
 
   self.buyTotal.subscribe(function(total) {
     if (!self.buyTotalHasFocus() || !self.buyPrice()) return;
-    if (total == 0) {
+    if (self.buyPrice() == 0) {
       self.buyAmount(0);
     } else {
       self.buyAmount(noExponents(divFloat(total, self.buyPrice())));
@@ -515,87 +590,13 @@ function ExchangeViewModel() {
     var total = self.availableBalanceForBuy();
     self.buyTotal(total);
     if (self.buyPrice()) {
-      if (total==0) {
+      if (self.buyPrice() == 0) {
         self.buyAmount(0);
       } else {
         self.buyAmount(divFloat(total, self.buyPrice()));
       }
       
     } 
-  }
-
-
-  //step 1: fetch an escrow address to send the BTC to
-  self.getBTCEscrowAddress = function(orderTxHash, orderParams, orderAction) {
-
-    var key = WALLET.getAddressObj(orderParams['source']).KEY;
-
-    var params = {
-      'order_source': orderParams['source'], 
-      'order_tx_hash': orderTxHash, 
-      'order_signed_tx_hash': key.signMessage(orderTxHash, 'base64'), 
-      'wallet_id': WALLET.identifier()
-    }
-
-    var onSuccess = function(escrowInfo, endpoint) {
-      assert(escrowInfo['escrow_address'], "Returned escrow address undefined/blank!");
-      self.sendBTCEscrow(orderTxHash, orderParams, orderAction, escrowInfo, 1);
-    }
-
-    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_escrow_address', params, TIMEOUT_OTHER, onSuccess);
-  }
-
-
-  //step 2: sends the BTC over to the escrow address
-  self.sendBTCEscrow = function(orderTxHash, orderParams, orderAction, escrowInfo, retry) {
-
-    var sendParams = { 
-      source: orderParams['source'],
-      destination: escrowInfo['escrow_address'],
-      quantity: orderParams['give_quantity'] + 100000 + Math.ceil(orderParams['give_quantity'] * 0.005),
-      asset: orderParams['give_asset'],
-      _divisible: orderParams['_give_divisible']
-    };
-
-    var onSuccess = function(depositTxHash, data, endpoint, addressType, armoryUTx) {
-      $.jqlog.info("BTCEscrow record " + escrowInfo['_id'] + "created for order tx hash " + orderTxHash);
-      
-      var message = "Your order to " + orderAction + " <b class='notoQuantityColor'>"
-       + (orderAction === 'buy' ? self.buyAmount() : self.sellAmount()) + "</b>"
-       + " <b class='notoAssetColor'>" + self.baseAsset() + "</b> has been placed.<br/><br/>"
-       + "<b class='notoQuantityColor'>" + normalizeQuantity(orderParams['give_quantity'], true) + "</b>"
-       + " <b class='notoAssetColor'>BTC</b> has been withdrawn and escrowed by the system"
-       + " to complete this order. If the order is cancelled or expires, this BTC will be returned."; 
-
-      WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
-    }
-
-    var onError = function(jqXHR, textStatus, errorThrown) {
-      if (retry < TRANSACTION_MAX_RETRY) {
-
-        $.jqlog.debug("TRANSACTION FAILED => RETRY " + retry + "/" + TRANSACTION_MAX_RETRY);
-
-        setTimeout(function() {      
-          self.sendBTCEscrow(orderTxHash, orderParams, orderAction, escrowAddress, retry + 1);
-        }, TRANSACTION_DELAY);
-
-      } else {
-        bootbox.alert("Transaction failed: " + textStatus);
-      }
-    }
-
-    WALLET.doTransaction(orderParams['source'], "create_send", sendParams, onSuccess, onError);
-  }
-
-  // Launch 2 steps for auto BTC escrow
-  self.doOrderAutoBTCEscrow = function(orderTxHash, orderParams, orderAction) {
-    assert(orderParams['give_asset'] === 'BTC');
-    assert(orderAction === 'buy' || orderAction === 'sell');
-    if(PREFERENCES['btcpay_method'] !== 'autoescrow') return;
-    
-    setTimeout(function() {      
-      self.getBTCEscrowAddress(orderTxHash, orderParams, orderAction);
-    }, TRANSACTION_DELAY);
   }
 
   self.doBuy = function() {
@@ -676,12 +677,17 @@ function ExchangeViewModel() {
       message += '<tr><td><b>Provided fee: </b></td><td style="text-align:right">' + self.buyFee() + '</td><td>' + self.quoteAsset() + '</td></tr>';
       message += '<tr><td colspan="3"><i>These fees are optional, go directly miners (not to us) and are non-refundable.</i></td></tr>';
     }
+    if(PREFERENCES['btcpay_method'] === 'autoescrow' && self.quoteAsset() === 'BTC') {
+      
+      message += '<tr><td colspan="3"><p class="bg-info padding-10">';
+      message += 'We will automatically escrow your BTC upon confirmation of this order. ';
+      message += 'It will be refunded to you if the order is cancelled or expires.'
+      message += '</p></td></tr>';
+      message += '<tr><td><b>Escrow commission: </b></td><td style="text-align:right">' + self.buyTotal() * ESCROW_COMMISSION + '</td><td>' + self.quoteAsset() + '</td></tr>';
+      message += '<tr><td><b>BTCPay retaining fee: </b></td><td style="text-align:right">' + normalizeQuantity(BTCPAY_FEE_RETAINER) + '</td><td>' + self.quoteAsset() + '</td></tr>';
+    }
     message += '</table>';
 
-    if(PREFERENCES['btcpay_method'] === 'autoescrow' && self.quoteAsset() === 'BTC') {
-      message += ('<p class="bg-info padding-10">We will automatically escrow your BTC upon confirmation of this order.'
-        + 'It will be refunded to you if the order is cancelled or expires.</p>');
-    }
 
     bootbox.dialog({
       title: "Confirm your order",
@@ -872,7 +878,8 @@ function ExchangeViewModel() {
         data['buy_orders'][i]['total'] = roundAmount(normalizeQuantity(data['buy_orders'][i]['total'], data['quote_asset_divisible']));
         var a = new Decimal(data['buy_orders'][i]['amount']);
         var t = new Decimal(data['buy_orders'][i]['total']);
-        var p = roundAmount(t.div(a));
+        var p = 0;
+        if (a != 0) p = roundAmount(t.div(a));
         data['buy_orders'][i]['price'] = p;
         data['buy_orders'][i]['base_depth'] = amount + base_depth;
         base_depth = data['buy_orders'][i]['base_depth'];
@@ -889,7 +896,8 @@ function ExchangeViewModel() {
           self.buyPrice(data['sell_orders'][i]['price']);
           var a = new Decimal(self.availableBalanceForBuy());
           var l = new Decimal(self.lowestAskPrice());
-          var o = roundAmount(a.div(l));
+          var o = 0;
+          if (l != 0) o = roundAmount(a.div(l));
           self.obtainableForBuy(o);
         }
         var amount = normalizeQuantity(data['sell_orders'][i]['amount'], data['base_asset_divisible']);

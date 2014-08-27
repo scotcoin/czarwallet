@@ -155,7 +155,7 @@ function WaitingBTCPayFeedViewModel() {
       return orderHashOrMatchHash == orderHash1 || orderHashOrMatchHash == orderHash2;
     });
     if(match) {
-      self.entries.remove(match);
+      self.entries.splice(self.entries.indexOf(match), 1);
       self.lastUpdated(new Date());
       return match;
     }
@@ -344,7 +344,7 @@ function UpcomingBTCPayFeedViewModel() {
       return orderHashOrMatchHash == orderHash1 || orderHashOrMatchHash == orderHash2;
     });
     if(match) {
-      self.entries.remove(match);
+      self.entries.splice(self.entries.indexOf(match), 1);
       self.lastUpdated(new Date());
       return match;
     }
