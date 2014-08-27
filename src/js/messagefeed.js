@@ -511,8 +511,10 @@ function MessageFeed() {
       } else if(WALLET.getAddressObj(message['source'])) {
         //order is not in the open orders listing, but should be
         self.OPEN_ORDERS.push(message);
+
       }
       refreshEscrowedBalance.push(message['source']);
+      WALLET.updateBTCEscrowedBalance();
 
     } else if(category == "order_matches") {
 
@@ -525,19 +527,32 @@ function MessageFeed() {
          || (WALLET.getAddressObj(message['tx1_address']) && message['backward_asset'] == 'BTC' && message['_status'] == 'pending')) {
            
         //If the BTCpay is marked as being processed by an automated escrow agent, ignore it 
-        if(AUTOBTCESCROW_SERVER) {
-          var orderMatchID = message['tx0_hash'] + message['tx1_hash'];
-          makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_by_order_match_id',
-            {'order_match_ids': [orderMatchID], 'wallet_id': WALLET.identifier()}, TIMEOUT_OTHER, 
+        if (AUTO_BTC_ESCROW_ENABLE) {
+
+          orderSignedTxHashes = [];
+
+          if (WALLET.getAddressObj(message['tx0_address'])) {
+            var key = WALLET.getAddressObj(message['tx0_address']).KEY;
+            orderSignedTxHashes.push(key.signMessage(message['tx0_hash'], 'base64'));
+          }
+          if (WALLET.getAddressObj(message['tx1_address'])) {
+            var key = WALLET.getAddressObj(message['tx1_address']).KEY;
+            orderSignedTxHashes.push(key.signMessage(message['tx1_hash'], 'base64'));
+          }
+
+          failoverAPI('autobtcescrow_get_by_order_signed_tx_hashes', {'order_signed_tx_hashes': orderSignedTxHashes}, 
             function(data, endpoint) {
-              if(!data[orderMatchID]) {
+              if(data.length == 0) {
                 $.jqlog.debug("AutoBTCEscrow: Adding to auto BTCPay in CW, since escrow system had no record for order match ID " + orderMatchID);
                 self.registerUpcomingBTCPay(message);
               }
             }
           );
+
         } else {
+
           self.registerUpcomingBTCPay(message);
+
         }
       } else if ((WALLET.getAddressObj(message['tx1_address']) && message['forward_asset'] == 'BTC' && message['_status'] == 'pending')
          || (WALLET.getAddressObj(message['tx0_address']) && message['backward_asset'] == 'BTC' && message['_status'] == 'pending')) {

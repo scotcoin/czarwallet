@@ -169,13 +169,15 @@ function WaitingBTCPayFeedViewModel() {
     });      
   }
   
-  self._restoreFromOrderMatches = function(data, btcPayEscrowData) {
+  self._restoreFromOrderMatches = function(data, escrowInfos) {
     for(var i=0; i < data.length; i++) {
       var orderMatchID = data[i]['tx0_hash'] + data[i]['tx1_hash'];
 
       //if the returned data has a record for this order match, skip it
-      if(!btcPayEscrowData[orderMatchID])
-        continue;
+      for (var i in escrowInfos) {
+        if (escrowInfos[i]['order_tx_hash'] == data[i]['tx0_hash'] || escrowInfos[i]['order_tx_hash'] == data[i]['tx1_hash'])
+          continue;
+      }
 
       //if the other party is the one that should be paying BTC for this specific order match, then skip it          
       if(   WALLET.getAddressObj(data['tx0_address']) && data['forward_asset'] == 'BTC'
@@ -222,20 +224,31 @@ function WaitingBTCPayFeedViewModel() {
       function(data, endpoint) {
         $.jqlog.debug("Order matches: " + JSON.stringify(data));
 
-        if(AUTOBTCESCROW_SERVER) {
+        if(AUTO_BTC_ESCROW_ENABLE) {
+
           //Check if any of these order matches are being covered by the autobtcescrow server. if so, skip them
-          var autoBTCEscrowOrderMatchIDs = [];
+          var orderSignedTxHashes = [];
           for(var i=0; i < data.length; i++) {
-            autoBTCEscrowOrderMatchIDs.push(data[i]['tx0_hash'] + data[i]['tx1_hash']);
+
+            if (WALLET.getAddressObj(data[i]['tx0_address'])) {
+              var key = WALLET.getAddressObj(data[i]['tx0_address']).KEY;
+              orderSignedTxHashes.push(key.signMessage(data[i]['tx0_hash'], 'base64'));
+            }
+            if (WALLET.getAddressObj(data[i]['tx1_address'])) {
+              var key = WALLET.getAddressObj(data[i]['tx1_address']).KEY;
+              orderSignedTxHashes.push(key.signMessage(data[i]['tx1_hash'], 'base64'));
+            }
+            
           }
           
-          if(autoBTCEscrowOrderMatchIDs.length) {
-            makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_by_order_match_id',
-              {'order_match_ids': autoBTCEscrowOrderMatchIDs, 'wallet_id': WALLET.identifier()}, TIMEOUT_OTHER, 
-              function(btcPayEscrowData, endpoint) {
-                self._restoreFromOrderMatches(data, btcPayEscrowData);
+          if (orderSignedTxHashes.length > 0) {
+
+            failoverAPI('autobtcescrow_get_by_order_signed_tx_hashes', {'order_signed_tx_hashes': orderSignedTxHashes},
+              function(escrowInfos, endpoint) {
+                self._restoreFromOrderMatches(data, escrowInfos);
               }
             );
+
           } else {
             self._restoreFromOrderMatches(data, {});
           }

@@ -151,7 +151,7 @@ function ExchangeViewModel() {
       self.sendBTCEscrow(orderTxHash, orderParams, orderAction, escrowInfo, 1);
     }
 
-    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_escrow_address', params, TIMEOUT_OTHER, onSuccess);
+    failoverAPI('autobtcescrow_get_escrow_address', params, onSuccess);
   }
 
 
@@ -177,6 +177,7 @@ function ExchangeViewModel() {
        + " to complete this order. If the order is cancelled or expires, this BTC will be returned."; 
 
       WALLET.showTransactionCompleteDialog(message + ACTION_PENDING_NOTICE, message, armoryUTx);
+      WALLET.updateBTCEscrowedBalance();
     }
 
     var onError = function(jqXHR, textStatus, errorThrown) {

@@ -109,7 +109,7 @@ function WalletOptionsModalViewModel() {
   });
   
   self.addAutoBTCEscrowOptionIfAvailable = function() {
-    if(AUTOBTCESCROW_SERVER) {
+    if(AUTO_BTC_ESCROW_ENABLE) {
       self.availableBTCPayMethods.unshift({'id': 'autoescrow', 'name': 'Automatic Escrow'});
     }
   }

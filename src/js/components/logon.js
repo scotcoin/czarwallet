@@ -160,6 +160,12 @@ function LogonViewModel() {
       
       // set quote assets
       QUOTE_ASSETS = data['quote_assets']
+
+      AUTO_BTC_ESCROW_ENABLE = data['auto_btc_escrow_enable'];
+      if (AUTO_BTC_ESCROW_ENABLE) {
+        ESCROW_COMMISSION = data['auto_btc_escrow']['commission_percentage'] / 100;
+        BTCPAY_FEE_RETAINER = denormalizeQuantity(data['auto_btc_escrow']['btcpay_fee_retainer']);
+      }
       
       //See if any servers show the wallet as online (this will return the a true result, if any server shows the wallet as online)
       multiAPI("is_wallet_online", {'wallet_id': WALLET.identifier()}, self.onIsWalletOnline);
@@ -244,7 +250,7 @@ function LogonViewModel() {
       }
       
       //Update/upgrade any specific pref settings
-      if(!AUTOBTCESCROW_SERVER && PREFERENCES['btcpay_method'] === 'autoescrow') {
+      if(!AUTO_BTC_ESCROW_ENABLE && PREFERENCES['btcpay_method'] === 'autoescrow') {
         PREFERENCES['btcpay_method'] = 'auto'; //no auto BTC services enabled
         mustSavePreferencesToServer = true;
       }

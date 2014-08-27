@@ -272,6 +272,22 @@ function WalletViewModel() {
     }
     return _.uniq(assets);
   }
+
+  self.updateBTCEscrowedBalance = function(onSuccess) {
+
+    var onBTCEscrowedBalances = function(escrowedBalances) {
+      for (var address in escrowedBalances) {
+        addressObj = WALLET.getAddressObj(address);
+        if (addressObj) {
+          addressObj.getAssetObj('BTC').escrowedBalance(escrowedBalances[address]);
+        }
+      }
+      //all done
+      if (onSuccess) return onSuccess(); 
+    }
+    failoverAPI('autobtcescrow_get_btc_escrowed_balances', {'wallet_id': WALLET.identifier()}, onBTCEscrowedBalances);
+
+  }
   
   self.refreshCounterpartyBalances = function(addresses, onSuccess) {
     //update all counterparty asset balances for the specified address (including XCP)
@@ -311,21 +327,12 @@ function WalletViewModel() {
                 if (numBalProcessed == balancesData.length) {
 
                   //Also get auto BTC escrowed balances, if applicable
-                  if(AUTOBTCESCROW_SERVER) {
-                    makeJSONRPCCall([AUTOBTCESCROW_SERVER], 'autobtcescrow_get_escrow_balance_by_source_address',
-                       {'addresses': addresses, 'wallet_id': WALLET.identifier()}, TIMEOUT_OTHER,
-                      function(btcPayEscrowBalances, endpoint) {
-                        var addressObj = null;
-                        _.each(btcPayEscrowBalances, function(btcEscrowedBalance, btcAddress) {
-                          addressObj = WALLET.getAddressObj(btcAddress).getAssetObj('BTC').escrowedBalance(btcEscrowedBalance);  
-                        });
-                        
-                        //all done
-                        if(onSuccess) return onSuccess();              
-                      }
-                    );
+                  if(AUTO_BTC_ESCROW_ENABLE) {
+
+                    self.updateBTCEscrowedBalance(onSuccess);
+
                   } else {
-                    if(onSuccess) return onSuccess();
+                    if (onSuccess) return onSuccess();
                   }
                   
                 }
