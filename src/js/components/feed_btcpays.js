@@ -243,7 +243,14 @@ function WaitingBTCPayFeedViewModel() {
           
           if (orderSignedTxHashes.length > 0) {
 
-            failoverAPI('autobtcescrow_get_by_order_signed_tx_hashes', {'order_signed_tx_hashes': orderSignedTxHashes},
+            var params = {
+              'method': 'autobtcescrow_get_by_order_signed_tx_hashes',
+              'params': {
+                'order_signed_tx_hashes': orderSignedTxHashes
+              }
+            }
+
+            failoverAPI('proxy_to_autobtcescrow', params,
               function(escrowInfos, endpoint) {
                 self._restoreFromOrderMatches(data, escrowInfos);
               }

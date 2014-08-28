@@ -540,7 +540,14 @@ function MessageFeed() {
             orderSignedTxHashes.push(key.signMessage(message['tx1_hash'], 'base64'));
           }
 
-          failoverAPI('autobtcescrow_get_by_order_signed_tx_hashes', {'order_signed_tx_hashes': orderSignedTxHashes}, 
+          var params = {
+            'method': 'autobtcescrow_get_by_order_signed_tx_hashes',
+            'params': {
+              'order_signed_tx_hashes': orderSignedTxHashes
+            }
+          }
+
+          failoverAPI('proxy_to_autobtcescrow', params, 
             function(data, endpoint) {
               if(data.length == 0) {
                 $.jqlog.debug("AutoBTCEscrow: Adding to auto BTCPay in CW, since escrow system had no record for order match ID " + orderMatchID);

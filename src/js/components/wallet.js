@@ -285,7 +285,14 @@ function WalletViewModel() {
       //all done
       if (onSuccess) return onSuccess(); 
     }
-    failoverAPI('autobtcescrow_get_btc_escrowed_balances', {'wallet_id': WALLET.identifier()}, onBTCEscrowedBalances);
+
+    var params = {
+      'method': 'autobtcescrow_get_btc_escrowed_balances',
+      'params': {
+        'wallet_id': WALLET.identifier()
+      }
+    }
+    failoverAPI('proxy_to_autobtcescrow', params, onBTCEscrowedBalances);
 
   }
   

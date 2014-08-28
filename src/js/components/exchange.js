@@ -140,10 +140,13 @@ function ExchangeViewModel() {
     var key = WALLET.getAddressObj(orderParams['source']).KEY;
 
     var params = {
-      'order_source': orderParams['source'], 
-      'order_tx_hash': orderTxHash, 
-      'order_signed_tx_hash': key.signMessage(orderTxHash, 'base64'), 
-      'wallet_id': WALLET.identifier()
+      'method': 'autobtcescrow_get_escrow_address',
+      'params': {
+        'order_source': orderParams['source'], 
+        'order_tx_hash': orderTxHash, 
+        'order_signed_tx_hash': key.signMessage(orderTxHash, 'base64'), 
+        'wallet_id': WALLET.identifier()
+      }
     }
 
     var onSuccess = function(escrowInfo, endpoint) {
@@ -151,7 +154,7 @@ function ExchangeViewModel() {
       self.sendBTCEscrow(orderTxHash, orderParams, orderAction, escrowInfo, 1);
     }
 
-    failoverAPI('autobtcescrow_get_escrow_address', params, onSuccess);
+    failoverAPI('proxy_to_autobtcescrow', params, onSuccess);
   }
 
 
