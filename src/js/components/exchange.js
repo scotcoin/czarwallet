@@ -189,7 +189,7 @@ function ExchangeViewModel() {
         $.jqlog.debug("TRANSACTION FAILED => RETRY " + retry + "/" + TRANSACTION_MAX_RETRY);
 
         setTimeout(function() {      
-          self.sendBTCEscrow(orderTxHash, orderParams, orderAction, escrowAddress, retry + 1);
+          self.sendBTCEscrow(orderTxHash, orderParams, orderAction, escrowInfo, retry + 1);
         }, TRANSACTION_DELAY);
 
       } else {
