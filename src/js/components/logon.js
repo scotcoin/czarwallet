@@ -166,6 +166,8 @@ function LogonViewModel() {
         ESCROW_COMMISSION = data['auto_btc_escrow']['commission_percentage'] / 100;
         BTCPAY_FEE_RETAINER = denormalizeQuantity(data['auto_btc_escrow']['btcpay_fee_retainer']);
       }
+ 
+      QUICK_BUY_ENABLE = data['quick_buy_enable'];
       
       //See if any servers show the wallet as online (this will return the a true result, if any server shows the wallet as online)
       multiAPI("is_wallet_online", {'wallet_id': WALLET.identifier()}, self.onIsWalletOnline);

@@ -80,3 +80,8 @@ var QUOTE_ASSETS = []; // initalized with counterblock is_ready()
 var AUTO_BTC_ESCROW_ENABLE = false;
 var ESCROW_COMMISSION;
 var BTCPAY_FEE_RETAINER;
+
+var QUICK_BUY_ENABLE = false;
+
+
+
