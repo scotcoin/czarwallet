@@ -12,6 +12,8 @@ function SimpleBuyViewModel() {
 
   self.prepareMachinesData = function(data) {
 
+    console.log(data);
+
     self.machines([]);
 
     for (var m in data) {
@@ -48,6 +50,19 @@ function SimpleBuyViewModel() {
               attributes[t].push({
                 'label': 'Reserve balance',
                 'value': data[m][t]['reserve'] + ' ' + baseAsset,
+                'attrclass': 'reserve'
+              });
+            }
+            if (data[m][t]['reserve-address']) {
+              var link = "";
+              if (baseAsset == 'BTC') {
+                link = "https://blockchain.info/address/" + data[m][t]['reserve-address'];
+              } else {
+                link = "http://www.blockscan.com/assetbyaddress.aspx?q=" + data[m][t]['reserve-address'];
+              }
+              attributes[t].push({
+                'label': 'Reserve address',
+                'value': '<a href="' + link + '" target="_blank">' + data[m][t]['reserve-address'] + '</a>',
                 'attrclass': 'reserve'
               });
             }
