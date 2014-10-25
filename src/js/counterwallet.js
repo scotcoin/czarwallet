@@ -98,7 +98,7 @@ function initRollbar() {
   }
 }
 
-function loadCounterwalletConfigFromServer() {
+function loadCzarwalletConfigFromServer() {
   //Request for the servers.json file, which should contain an array of API backends for us to use
   $.getJSON("/counterwallet.conf.json", function(data) {
     assert(data && typeof data == "object" && data.hasOwnProperty("servers"), "Returned servers.json file does not contain valid JSON object");
@@ -134,9 +134,9 @@ function loadCounterwalletConfigFromServer() {
 }
 
 function needWarningOnExit() {
-  return (window.WALLET && WALLET.isSellingBTC()) ||
-         window.MESSAGE_FEED.sellBTCOrdersCount() ||
-         window.PENDING_ACTION_FEED.pendingSellBTCOrdersCount();
+  return (window.WALLET && WALLET.isSellingCZR()) ||
+         window.MESSAGE_FEED.sellCZROrdersCount() ||
+         window.PENDING_ACTION_FEED.pendingSellCZROrdersCount();
 }
 
 function warningOnExit() {
@@ -295,7 +295,7 @@ $(document).ready(function() {
   
   autoDropUpDropdowns();
   
-  loadCounterwalletConfigFromServer();
+  loadCzarwalletConfigFromServer();
 
   window.onbeforeunload = warningOnExit;
 });

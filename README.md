@@ -1,7 +1,7 @@
-Counterwallet
+Czarwallet
 ================
 
-Online Webwallet for [Counterparty](http://www.counterparty.co).
+Online Webwallet for [Czarparty](http://czarparty.co).
 
 Originally based off of [Carbonwallet](http://www.carbonwallet.com) (however virtually all the original code has been removed or rewritten).
 
@@ -17,7 +17,7 @@ Features
 ----------
 
 - Deterministic wallet addresses (BIP 32-based)
-- Supports the majority of Counterparty functionality
+- Supports the majority of Czarparty functionality
 - Fully-AJAX driven
 - Anonymous
 - Runs in the browser, with keys created in memory
@@ -68,10 +68,10 @@ grunt build
 grunt freeze
 ```
 
-Setting up your own Counterwallet Server
+Setting up your own Czarwallet Server
 -----------------------------------------
 
-See [this link](https://github.com/CounterpartyXCP/counterpartyd_build/blob/master/docs/SettingUpAFederatedNode.rst) for more info.
+See [this link](https://github.com/CzarpartyXCP/czarpartyd_build/blob/master/docs/SettingUpAFederatedNode.rst) for more info.
 
 
 Licence

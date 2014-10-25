@@ -10,10 +10,10 @@ function DonationViewModel() {
       validator: function (val, self) {
         var address = self.sourceAddress();
         var quantity = self.quantity();
-        if (self.donationCurrency() == 'XCP') {
-          return parseFloat(quantity) <= self.balancesXCP[address];
+        if (self.donationCurrency() == 'XZR') {
+          return parseFloat(quantity) <= self.balancesXZR[address];
         } else {
-          return parseFloat(quantity) <= self.balancesBTC[address];
+          return parseFloat(quantity) <= self.balancesCZR[address];
         }
       },
       message: i18n.t('quantity_exceeds_balance'),
@@ -24,10 +24,10 @@ function DonationViewModel() {
   self.shown = ko.observable(false);
   self.availableAddresses = ko.observableArray([]);
   self.sourceAddress = ko.observable(null).extend(quantityValidator);
-  self.balancesXCP = {};
-  self.balancesBTC = {};
+  self.balancesXZR = {};
+  self.balancesCZR = {};
 	self.quantity = ko.observable(null).extend(quantityValidator);
-  self.donationCurrency = ko.observable('BTC');
+  self.donationCurrency = ko.observable('CZR');
 
 
   self.validationModel = ko.validatedObservable({
@@ -47,17 +47,17 @@ function DonationViewModel() {
 
     // prepare source addresses
     self.availableAddresses([]);
-    self.balancesXCP = {};
+    self.balancesXZR = {};
     var addresses = WALLET.getAddressesList(true);
     var options = []
     for(var i = 0; i < addresses.length; i++) {
-      var btcBalance = WALLET.getBalance(addresses[i][0], 'BTC', true);
+      var czrBalance = WALLET.getBalance(addresses[i][0], 'CZR', true);
       options.push({
         address: addresses[i][0], 
-        label: addresses[i][1] + ' (' + round(btcBalance, 2) + ' BTC / ' + round(addresses[i][2], 2) + ' XCP)'
+        label: addresses[i][1] + ' (' + round(czrBalance, 2) + ' CZR / ' + round(addresses[i][2], 2) + ' XZR)'
       });
-      self.balancesBTC[addresses[i][0]] = btcBalance;
-      self.balancesXCP[addresses[i][0]] = addresses[i][2];
+      self.balancesCZR[addresses[i][0]] = czrBalance;
+      self.balancesXZR[addresses[i][0]] = addresses[i][2];
     }
     self.availableAddresses(options);
   }

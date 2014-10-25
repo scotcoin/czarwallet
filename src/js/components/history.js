@@ -2,8 +2,8 @@ function BalanceHistoryViewModel() {
   //An address on a wallet
   var self = this;
   self.selectedAsset = ko.observable('');
-  self.availableAssets = !USE_TESTNET ? ko.observableArray(["XCP", "BTC"]) : ko.observableArray(["XCP"]);
-  //^ don't load BTC as an asset on testnet, since we can't show the data (since blockchain doesn't support testnet)
+  self.availableAssets = !USE_TESTNET ? ko.observableArray(["XZR", "CZR"]) : ko.observableArray(["XZR"]);
+  //^ don't load CZR as an asset on testnet, since we can't show the data (since blockchain doesn't support testnet)
   self.graphData = null;
   self.ASSET_LASTCHANGE = null;
   
@@ -16,7 +16,7 @@ function BalanceHistoryViewModel() {
       }
       otherAssets.sort();
       self.availableAssets(self.availableAssets().concat(otherAssets));
-      //^ this way, XCP and BTC stay at the top, but the other assets are alphabetically sorted
+      //^ this way, XZR and CZR stay at the top, but the other assets are alphabetically sorted
     });
     //the first asset will be automatically selected by default
     //assetChanged doesn't seem to autotrigger at least with chrome...manually invoke it
@@ -28,12 +28,12 @@ function BalanceHistoryViewModel() {
     self.ASSET_LASTCHANGE = self.selectedAsset();
     $.jqlog.debug("Balance history: Token changed: " + self.selectedAsset());
     
-    if(self.selectedAsset() == "BTC") { //mainnet only (as we use blockchain.info for this and they don't support testnet)
+    if(self.selectedAsset() == "CZR") { //mainnet only (as we use blockchain.info for this and they don't support testnet)
       var addresses = WALLET.getAddressesList();
       self.graphData = [];
       
       for(var i=0; i < addresses.length; i++) {
-        //since we don't track BTC balances, we need to go to blockchain.info for that
+        //since we don't track CZR balances, we need to go to blockchain.info for that
         //$.getJSON("http://blockchain.info/charts/balance", {format: 'json', address: addresses[i], cors: 'true'}, function(data, textStatus, jqXHR) {
         var q = 'select * from html where url="http://blockchain.info/charts/balance?format=json&address='+addresses[i]+'"';
         $.queryYQL(q, function(data, textStatus, jqXHR) {
@@ -58,7 +58,7 @@ function BalanceHistoryViewModel() {
         }).error(function(jqXHR, textStatus, errorThrown) {
           var address = /address%3D([A-Za-z0-9]+)%22/g.exec(jqXHR.url)[1];
           var addressHash = hashToB64(address);
-          $.jqlog.debug( "Could not get BTC balance from blockchain for address " + address + ": " + errorThrown);
+          $.jqlog.debug( "Could not get CZR balance from blockchain for address " + address + ": " + errorThrown);
           var addressName = PREFERENCES['address_aliases'][addressHash] ? "<b>" + PREFERENCES['address_aliases'][addressHash] + "</b> (" + address + ")" : address; 
           self.graphData.push({'name': addressName, 'data': []});
           if(self.graphData.length == addresses.length) {
@@ -149,7 +149,7 @@ function TransactionHistoryItemViewModel(data) {
     return getLinkForCPData('address', self.SOURCE,  getAddressLabel(self.SOURCE));
   }
 
-  //self.btcQuantity = TODO
+  //self.czrQuantity = TODO
   //self.fee = TODO
   
   self.dispBlockTime = function() {
@@ -178,11 +178,11 @@ function TransactionHistoryItemViewModel(data) {
         self.DATA['forward_asset'], getAddressLabel(self.DATA['tx1_address']),
         smartFormat(normalizeQuantity(self.DATA['backward_quantity'], self.DATA['_backward_asset_divisible'])),
         self.DATA['backward_asset']);
-      if(self.DATA['forward_asset'] == 'BTC' || self.DATA['backward_asset'] == 'BTC') {
-        desc += " <b>(" + i18n.t("pending BTCpay") + ")</b>";
+      if(self.DATA['forward_asset'] == 'CZR' || self.DATA['backward_asset'] == 'CZR') {
+        desc += " <b>(" + i18n.t("pending CZRpay") + ")</b>";
       }
-    } else if(self.RAW_TX_TYPE == 'btcpays') {
-      desc = i18n.t("hist_btcpay", smartFormat(normalizeQuantity(self.DATA['btc_amount'])));
+    } else if(self.RAW_TX_TYPE == 'czrpays') {
+      desc = i18n.t("hist_czrpay", smartFormat(normalizeQuantity(self.DATA['czr_amount'])));
     } else if(self.RAW_TX_TYPE == 'issuances') {
       if(self.DATA['transfer']) {
         desc = i18n.t("hist_transfer", self.DATA['asset'], getLinkForCPData('address', self.DATA['issuer'], getAddressLabel(self.DATA['issuer'])));

@@ -12,5 +12,5 @@ src/vendors/
 npm-debug.log
 servers.json
 src/bitcore.html
-src/bitcoinjs.html
+src/czarcoinjs.html
 counterwallet.conf.json

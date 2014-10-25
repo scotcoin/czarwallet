@@ -153,7 +153,7 @@ function CreateAssetModalViewModel() {
           message = i18n.t("token_has_been_created", self.name());
         }
         message +=  "<br/><br/>";
-        message += i18n.t("issuance_end_message", getAddressLabel(self.address()), ASSET_CREATION_FEE_XCP);
+        message += i18n.t("issuance_end_message", getAddressLabel(self.address()), ASSET_CREATION_FEE_XZR);
 
         WALLET.showTransactionCompleteDialog(message + " " + i18n.t(ACTION_PENDING_NOTICE), message, armoryUTx);
       }
@@ -276,8 +276,8 @@ function TransferAssetModalViewModel() {
   
   self.destAddress = ko.observable('').trimmed().extend({
     required: true,
-    isValidBitcoinAddress: self,
-    isNotSameBitcoinAddress: self
+    isValidCzarcoinAddress: self,
+    isNotSameCzarcoinAddress: self
   });
   
   self.validationModel = ko.validatedObservable({
@@ -548,7 +548,7 @@ function PayDividendModalViewModel() {
     }
     
     // fetch shareholders to check transaction dest.
-    if (self.selectedDividendAsset() == 'BTC') {
+    if (self.selectedDividendAsset() == 'CZR') {
       var params = {
         'filters': [
           {'field': 'asset', 'op': '=', 'value': self.assetData().asset},
@@ -576,7 +576,7 @@ function PayDividendModalViewModel() {
       for (var a in data) {
         dests.push(data[a]['address']);
       }
-      params['_btc_dividend_dests'] = dests;
+      params['_czr_dividend_dests'] = dests;
     }
 
     WALLET.doTransaction(self.addressVM().ADDRESS, "create_dividend", params,
@@ -610,10 +610,10 @@ function PayDividendModalViewModel() {
           self.availableDividendAssets.push(new DividendAssetInDropdownItemModel(data[i]['asset'], data[i]['quantity'], data[i]['normalized_quantity']));
       }
 
-      //Also get the BTC balance at this address and put at head of the list
-      WALLET.retrieveBTCBalance(address.ADDRESS, function(balance) {
+      //Also get the CZR balance at this address and put at head of the list
+      WALLET.retrieveCZRBalance(address.ADDRESS, function(balance) {
         if(balance) {
-          self.availableDividendAssets.unshift(new DividendAssetInDropdownItemModel("BTC", balance, normalizeQuantity(balance)));
+          self.availableDividendAssets.unshift(new DividendAssetInDropdownItemModel("CZR", balance, normalizeQuantity(balance)));
         }
       });
     });
@@ -646,8 +646,8 @@ function CallAssetModalViewModel() {
     min: 0.00001,
     validation: {
       validator: function (val, self) {
-        if(self.xcpBalRemainingPostCall() === null) return true; //wait until dividend asset chosen to validate
-        return self.xcpBalRemainingPostCall() >= 0;
+        if(self.xzrBalRemainingPostCall() === null) return true; //wait until dividend asset chosen to validate
+        return self.xzrBalRemainingPostCall() >= 0;
       },
       message: i18n.t('total_diviend_exceed_balance'),
       params: self
@@ -693,30 +693,30 @@ function CallAssetModalViewModel() {
     return smartFormat(self.unitsAfterCallback(), null, 4); 
   }, self); 
 
-  self.totalXCPPay = ko.computed(function() {
+  self.totalXZRPay = ko.computed(function() {
     if(!self.percentageToCall() || !self.assetObj()) return null;
     return +(self.percentageToCall() * (self.assetObj().normalizedTotalIssued() - self.assetObj().normalizedBalance()) * self.assetObj().CALLPRICE).toFixed(4);
   }, self);
 
-  self.xcpBalRemainingPostCall = ko.computed(function() {
-    if(self.totalXCPPay() === null) return null;
-    return Decimal.round(new Decimal(WALLET.getBalance(self.address(), 'XCP')).sub(self.totalXCPPay()), 8, Decimal.MidpointRounding.ToEven).toFloat();
+  self.xzrBalRemainingPostCall = ko.computed(function() {
+    if(self.totalXZRPay() === null) return null;
+    return Decimal.round(new Decimal(WALLET.getBalance(self.address(), 'XZR')).sub(self.totalXZRPay()), 8, Decimal.MidpointRounding.ToEven).toFloat();
   }, self);
   
-  self.xcpBalRemainingPostCallIsSet = ko.computed(function() {
-    return self.xcpBalRemainingPostCall() !== null;
+  self.xzrBalRemainingPostCallIsSet = ko.computed(function() {
+    return self.xzrBalRemainingPostCall() !== null;
   }, self);
 
-  self.dispXCPBalRemainingPostCall = ko.computed(function() {
-    return smartFormat(self.xcpBalRemainingPostCall(), null, 4);
+  self.dispXZRBalRemainingPostCall = ko.computed(function() {
+    return smartFormat(self.xzrBalRemainingPostCall(), null, 4);
   }, self);
   
   self.validationModel = ko.validatedObservable({
     percentageToCall: self.percentageToCall
   });
 
-  self.dispXCPBalRemainingPostCallCss = ko.computed(function() {
-    return self.xcpBalRemainingPostCall() < 0 ? 'errorColor' : 'sellColor';
+  self.dispXZRBalRemainingPostCallCss = ko.computed(function() {
+    return self.xzrBalRemainingPostCall() < 0 ? 'errorColor' : 'sellColor';
   }, self);
 
   self.resetForm = function() {
@@ -744,9 +744,9 @@ function CallAssetModalViewModel() {
 
         var message = "";
         if (armoryUTx) {
-          message = i18n.t("you_will_calling_back", self.percentageToCall(), self.asset(), self.totalXCPPay());
+          message = i18n.t("you_will_calling_back", self.percentageToCall(), self.asset(), self.totalXZRPay());
         } else {
-          message = i18n.t("you_have_called_back", self.percentageToCall(), self.asset(), self.totalXCPPay());
+          message = i18n.t("you_have_called_back", self.percentageToCall(), self.asset(), self.totalXZRPay());
         }
         
         WALLET.showTransactionCompleteDialog(message + " " + i18n.t(ACTION_PENDING_NOTICE), message, armoryUTx);

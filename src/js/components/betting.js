@@ -64,7 +64,7 @@ function FeedBrowserViewModel() {
 
   self.feedUrl = ko.observable('').extend({
     required: false,
-    isValidUrlOrValidBitcoinAdressOrJsonBet: self
+    isValidUrlOrValidCzarcoinAdressOrJsonBet: self
   });
   
   self.feedUrl.subscribe(function(val) {
@@ -251,7 +251,7 @@ function FeedBrowserViewModel() {
     for(var i = 0; i < addresses.length; i++) {
       options.push({
         address: addresses[i][0], 
-        label: addresses[i][1] + ' (' + addresses[i][2] + ' XCP)'
+        label: addresses[i][1] + ' (' + addresses[i][2] + ' XZR)'
       });
       self.balances[addresses[i][0]] = addresses[i][2];
     }
@@ -315,8 +315,8 @@ function FeedBrowserViewModel() {
       'expired': i18n.t('expired')
     };
     for (var i in feed.counters.bets) {
-    	feed.counters.bets[i].wager_quantity = normalizeQuantity(feed.counters.bets[i].wager_quantity) + ' XCP';
-    	feed.counters.bets[i].wager_remaining = normalizeQuantity(feed.counters.bets[i].wager_remaining) + ' XCP';
+    	feed.counters.bets[i].wager_quantity = normalizeQuantity(feed.counters.bets[i].wager_quantity) + ' XZR';
+    	feed.counters.bets[i].wager_remaining = normalizeQuantity(feed.counters.bets[i].wager_remaining) + ' XZR';
     	feed.counters.bets[i].status_html = '<span class="label label-'+classes[feed.counters.bets[i].status]+'">'+feed.counters.bets[i].status+'</span>';
 
     }
@@ -403,8 +403,8 @@ function FeedBrowserViewModel() {
           if (b>0) displayedData2[b].countervolume = displayedData2[b-1].countervolume + displayedData2[b].counterwager_remaining;
           else displayedData2[b].countervolume = displayedData2[b].counterwager_remaining;
 
-          displayedData2[b].volume_str = satoshiToXCP(displayedData2[b].countervolume);
-          displayedData2[b].counterwager = satoshiToXCP(displayedData2[b].counterwager);
+          displayedData2[b].volume_str = satoshiToXZR(displayedData2[b].countervolume);
+          displayedData2[b].counterwager = satoshiToXZR(displayedData2[b].counterwager);
         }
       }
       self.counterBets(displayedData2);
@@ -651,10 +651,10 @@ function OpenBetsViewModel() {
 
       bet.fee = satoshiToPercent(data.bets[i].fee_fraction_int);
       bet.deadline = moment(data.bets[i].deadline*1000).format('YYYY/MM/DD hh:mm:ss A Z')
-      bet.wager_quantity = satoshiToXCP(data.bets[i].wager_quantity);
-      bet.wager_remaining = satoshiToXCP(data.bets[i].wager_remaining);
-      bet.counterwager_quantity = satoshiToXCP(data.bets[i].counterwager_quantity);
-      bet.counterwager_remaining = satoshiToXCP(data.bets[i].counterwager_remaining);
+      bet.wager_quantity = satoshiToXZR(data.bets[i].wager_quantity);
+      bet.wager_remaining = satoshiToXZR(data.bets[i].wager_remaining);
+      bet.counterwager_quantity = satoshiToXZR(data.bets[i].counterwager_quantity);
+      bet.counterwager_remaining = satoshiToXZR(data.bets[i].counterwager_remaining);
       bet.odds = reduce(data.bets[i].wager_quantity, data.bets[i].counterwager_quantity).join('/');
       bet.bet_html = i18n.t('bet_type_on_target_value', bet.bet_type, bet.target_value );
       bet.tx_hash = data.bets[i].tx_hash;
@@ -802,8 +802,8 @@ function MatchedBetsViewModel() {
         bet.counterwager = data_bet.forward_quantity;
       }
       bet.odds = reduce(bet.wager, bet.counterwager).join('/');
-      bet.wager = satoshiToXCP(bet.wager);
-      bet.counterwager = satoshiToXCP(bet.counterwager);
+      bet.wager = satoshiToXZR(bet.wager);
+      bet.counterwager = satoshiToXZR(bet.counterwager);
 
       if (data_bet.status == 'pending') {
         bet.status = data_bet.status;

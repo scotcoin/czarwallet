@@ -39,7 +39,7 @@ Full list of changes are at: http://goo.gl/AICdol
 
 ### v1.2.2 (~2014-06-25) ###
 **Enhancements:**
-* Check double connection to prevent double btcpay
+* Check double connection to prevent double czrpay
 * Cancel bet buttons
 
 ### v1.2.1 ###
@@ -122,7 +122,7 @@ Full list of changes are at: http://goo.gl/AICdol
     
 ### v0.9.4 ###
 **Enhancements:**
-* when wanting to do a trade where BTC we will purchased (i.e. a btcpay is required), show the online status of counterwallet users (as available) with trades appearing that offer to sell BTC. this is important because BTCpays must complete in a certain (shortish) period of time, and trading with a user that is marked online has a higher percentage chance of fully going through. online status is tracked by the server in an anonymous fashion (i.e. using the walletID identifier). Note that this change does not work with old trade (it will only work with trades that are made *after* this update is put into place)
+* when wanting to do a trade where BTC we will purchased (i.e. a czrpay is required), show the online status of counterwallet users (as available) with trades appearing that offer to sell BTC. this is important because BTCpays must complete in a certain (shortish) period of time, and trading with a user that is marked online has a higher percentage chance of fully going through. online status is tracked by the server in an anonymous fashion (i.e. using the walletID identifier). Note that this change does not work with old trade (it will only work with trades that are made *after* this update is put into place)
 * added /online command to chat, which will tell you if the user you specify is online or not (e.g. type "/online cityglut" to see if cityglut currently has counterwallet running).
 * added /msg command to chat for private messaging between handles...e.g. /msg halfcab yo wazzup
 

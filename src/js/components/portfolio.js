@@ -11,18 +11,18 @@ var AssetPortfolioViewModel = AssetLeaderboardViewModel.extend(function() {
   self.showPortfolioIn.subscribeChanged(function(newValue, prevValue) {
     //use this to hook into the parent class being done with loading its market info data
     assert(self.marketInfo.length);
-    assert(newValue == "XCP" || newValue == "BTC", "Invalid value");
+    assert(newValue == "XZR" || newValue == "CZR", "Invalid value");
     if(newValue == prevValue) return; //no change
     
     if((Object.getOwnPropertyNames(self.myGraphTables).length == 0)) {
       var i = null, j = null;
 
-      self.myGraphTables['XCP'] = {
+      self.myGraphTables['XZR'] = {
         'balByAsset': ko.observableArray([]),
         'rawValByAsset': {}, 'valByAsset': ko.observableArray([]),
         'pctChange': ko.observableArray([])
       };
-      self.myGraphTables['BTC'] = {
+      self.myGraphTables['CZR'] = {
         'balByAsset': ko.observableArray([]),
         'rawValByAsset': {}, 'valByAsset': ko.observableArray([]),
         'pctChange': ko.observableArray([])
@@ -32,7 +32,7 @@ var AssetPortfolioViewModel = AssetLeaderboardViewModel.extend(function() {
         self.balancesByAsset[self.myAssets()[i]] = WALLET.getTotalBalance(self.myAssets()[i]);
       }
       var assetTotalBal = null, info = null;
-      for(var baseAsset in self.myGraphTables) { //XCP or BTC
+      for(var baseAsset in self.myGraphTables) { //XZR or CZR
         if(self.myGraphTables.hasOwnProperty(baseAsset)) {
           for(i=0; i < self.myAssets().length; i++) {
             asset = self.myAssets()[i];
@@ -44,11 +44,11 @@ var AssetPortfolioViewModel = AssetLeaderboardViewModel.extend(function() {
             //populate graph data for assets with market info
             info = $.grep(self.marketInfo, function(e) { return e.asset == asset; })[0]; //O(n^3) --- optimize!
             if(info) {
-              self.myGraphTables[baseAsset]['rawValByAsset'][asset] = info ? assetTotalBal / info[baseAsset == 'XCP' ? 'price_in_xcp' : 'price_in_btc'] : null;
+              self.myGraphTables[baseAsset]['rawValByAsset'][asset] = info ? assetTotalBal / info[baseAsset == 'XZR' ? 'price_in_xzr' : 'price_in_czr'] : null;
               self.myGraphTables[baseAsset]['valByAsset'].push([asset, self.myGraphTables[baseAsset]['rawValByAsset'][asset]])
               self.myGraphTables[baseAsset]['pctChange'].push({
                 name: asset,
-                data: [info ? (info[ baseAsset == 'XCP' ? '24h_vol_price_change_in_xcp' : '24h_vol_price_change_in_btc' ] || 0) : null]
+                data: [info ? (info[ baseAsset == 'XZR' ? '24h_vol_price_change_in_xzr' : '24h_vol_price_change_in_czr' ] || 0) : null]
               });
             }
           }

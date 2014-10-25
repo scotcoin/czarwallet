@@ -2,10 +2,10 @@ Counterblock = {};
 
 Counterblock.getBalances = function(addresses, cwkeys, callback) {
 
-  WALLET.retriveBTCAddrsInfo(addresses, function(btcData) {
+  WALLET.retriveCZRAddrsInfo(addresses, function(czrData) {
     failoverAPI("get_normalized_balances", {'addresses': addresses}, function(assetsData, endpoint) {
       var data = {};
-      // extracts all asset except BTC
+      // extracts all asset except CZR
       for (var i in assetsData) {
         e = assetsData[i];
         data[e.address] = data[e.address] || {};
@@ -14,17 +14,17 @@ Counterblock.getBalances = function(addresses, cwkeys, callback) {
           'owner': e.owner
         }
       }
-      // extracts BTC only if balance>0 or other assets in data[e.addr]
-      for (var i in btcData) {
-        e = btcData[i];
+      // extracts CZR only if balance>0 or other assets in data[e.addr]
+      for (var i in czrData) {
+        e = czrData[i];
         if (data[e.addr] || e.confirmedRawBal>0) {
           data[e.addr] = data[e.addr] || {};
-          data[e.addr]['BTC'] = {            
+          data[e.addr]['CZR'] = {            
             'balance': e.confirmedRawBal,
             'txouts': e.rawUtxoData.length  
           }; 
           if (cwkeys[e.addr]) {
-            data[e.addr]['BTC']['privkey'] = cwkeys[e.addr].getWIF();
+            data[e.addr]['CZR']['privkey'] = cwkeys[e.addr].getWIF();
           }
         }        
       }
