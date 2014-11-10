@@ -911,6 +911,12 @@
 
     <!-- COUNTERWALLET JS INCLUDES -->
 <script src="js/czarwallet-min.js?v=cd8f6b33ffb5"></script>
-
+    <script type="text/javascript">
+    /* Enable one-step language initialization */
+    function getURLParameter(name) {
+        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null
+    }
+    if(getURLParameter('lang')){history.pushState('',document.title,'/');}
+    </script>
   </body>
 </html>
